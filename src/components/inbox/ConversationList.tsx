@@ -99,6 +99,11 @@ export function ConversationList() {
                           Bloqueado
                         </span>
                       )}
+                      {!contact.saved && !contact.blocked && (
+                        <span className="rounded-md bg-warning/15 px-1.5 py-0.5 text-[10px] font-medium text-warning-foreground">
+                          No guardado
+                        </span>
+                      )}
                       {paused && !contact.blocked && (
                         <span className="rounded-md bg-warning/15 px-1.5 py-0.5 text-[10px] font-medium text-warning-foreground">
                           Pausado
