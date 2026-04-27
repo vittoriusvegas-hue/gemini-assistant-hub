@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Bot, Send, CheckCircle2, Play, Paperclip, Smile, MoreHorizontal, TrendingUp, UserPlus } from "lucide-react";
+import { Bot, Send, CheckCircle2, Play, Paperclip, Smile, MoreHorizontal, TrendingUp, UserPlus, ArrowLeft } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { useInbox } from "@/lib/inbox-store";
@@ -22,6 +22,7 @@ function formatRemaining(ms: number) {
 export function ChatPanel() {
   const { selectedConversationId, conversations, contacts, messages, sendAgentMessage, resumeBot, resolveConversation, deals, createDeal, pipelineStages, selectDeal, saveContact } =
     useInbox();
+  const { selectConversation } = useInbox();
   const navigate = useNavigate();
   const conv = conversations.find((c) => c.id === selectedConversationId) ?? null;
   const contact = conv ? contacts.find((c) => c.id === conv.contactId) ?? null : null;
@@ -67,31 +68,38 @@ export function ChatPanel() {
 
   return (
     <div className="flex flex-1 flex-col bg-background">
-      <div className="flex items-center justify-between border-b bg-card px-5 py-3">
-        <div className="flex items-center gap-3">
+      <div className="flex items-center justify-between gap-2 border-b bg-card px-3 py-3 md:px-5">
+        <div className="flex min-w-0 items-center gap-2 md:gap-3">
+          <button
+            onClick={() => selectConversation(null)}
+            className="-ml-1 grid h-8 w-8 shrink-0 place-items-center rounded-lg text-muted-foreground hover:bg-muted md:hidden"
+            title="Volver"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </button>
           <ContactAvatar name={contact.name} color={contact.avatarColor} size={40} online />
-          <div>
+          <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <h3 className="text-sm font-semibold">{contact.name}</h3>
+              <h3 className="truncate text-sm font-semibold">{contact.name}</h3>
               <ChannelBadge channel={contact.channel} />
               {!contact.saved && (
-                <span className="rounded-md bg-warning/15 px-1.5 py-0.5 text-[10px] font-medium text-warning-foreground">
+                <span className="hidden rounded-md bg-warning/15 px-1.5 py-0.5 text-[10px] font-medium text-warning-foreground sm:inline">
                   No guardado
                 </span>
               )}
             </div>
-            <div className="text-xs text-muted-foreground">{contact.phone}</div>
+            <div className="truncate text-xs text-muted-foreground">{contact.phone}</div>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-1.5">
           {!contact.saved && (
             <button
               onClick={() => setShowSave(true)}
-              className="inline-flex items-center gap-1.5 rounded-lg border bg-background px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted"
+              className="inline-flex items-center gap-1.5 rounded-lg border bg-background px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-muted"
               title="Agregar este número a tus contactos"
             >
               <UserPlus className="h-3.5 w-3.5" />
-              Agregar a contactos
+              <span className="hidden sm:inline">Agregar a contactos</span>
             </button>
           )}
           {existingDeal ? (
@@ -100,30 +108,30 @@ export function ChatPanel() {
                 selectDeal(existingDeal.id);
                 navigate({ to: "/sales" });
               }}
-              className="inline-flex items-center gap-1.5 rounded-lg border bg-primary-soft px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/15"
+              className="inline-flex items-center gap-1.5 rounded-lg border bg-primary-soft px-2.5 py-1.5 text-xs font-medium text-primary hover:bg-primary/15"
               title="Ver oportunidad en el embudo"
             >
               <TrendingUp className="h-3.5 w-3.5" />
-              Ver en embudo
+              <span className="hidden sm:inline">Ver en embudo</span>
             </button>
           ) : (
             <button
               onClick={() => setShowDeal(true)}
-              className="inline-flex items-center gap-1.5 rounded-lg border bg-background px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted"
+              className="inline-flex items-center gap-1.5 rounded-lg border bg-background px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-muted"
               title="Crear una oportunidad de venta a partir de esta conversación"
             >
               <TrendingUp className="h-3.5 w-3.5" />
-              Enviar al embudo
+              <span className="hidden sm:inline">Enviar al embudo</span>
             </button>
           )}
           <button
             onClick={() => resolveConversation(conv.id)}
-            className="inline-flex items-center gap-1.5 rounded-lg border bg-background px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted"
+            className="hidden items-center gap-1.5 rounded-lg border bg-background px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-muted sm:inline-flex"
           >
             <CheckCircle2 className="h-3.5 w-3.5" />
             {conv.status === "open" ? "Marcar resuelta" : "Reabrir"}
           </button>
-          <button className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground hover:bg-muted">
+          <button className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-muted-foreground hover:bg-muted">
             <MoreHorizontal className="h-4 w-4" />
           </button>
         </div>
