@@ -1,4 +1,4 @@
-import type { Contact, Conversation, Message } from "./inbox-types";
+import type { Contact, Conversation, Deal, Message } from "./inbox-types";
 
 const now = Date.now();
 const m = (min: number) => now - min * 60 * 1000;
@@ -55,4 +55,107 @@ export const initialMessages: Message[] = [
   // v6 – Elena (resuelta)
   { id: "m18", conversationId: "v6", sender: "contact", text: "Gracias por la ayuda!", createdAt: h(20) },
   { id: "m19", conversationId: "v6", sender: "agent", text: "¡A ti! Que tengas buen día 🙌", createdAt: h(19.9) },
+];
+
+export const initialDeals: Deal[] = [
+  {
+    id: "d1",
+    title: "Plan Pro anual — María González",
+    contactId: "c1",
+    conversationId: "v1",
+    stage: "negotiation",
+    amount: 588,
+    currency: "EUR",
+    probability: 70,
+    expectedCloseAt: now + 1000 * 60 * 60 * 24 * 4,
+    owner: "Laura R.",
+    tags: ["Pro", "Anual"],
+    attachments: [
+      { id: "a1", name: "captura-checkout.png", kind: "image", size: "412 KB", source: "chat", uploadedBy: "María", createdAt: m(35) },
+      { id: "a2", name: "tarifa-pro-2026.pdf", kind: "pdf", size: "1.1 MB", source: "reference", uploadedBy: "Laura R.", createdAt: h(20) },
+    ],
+    comments: [
+      { id: "co1", author: "Laura R.", text: "Pidió pago anual, mando link con descuento del 15%.", createdAt: m(8) },
+    ],
+    createdAt: h(40),
+    updatedAt: m(8),
+  },
+  {
+    id: "d2",
+    title: "Demo equipo — Carlos Ruiz",
+    contactId: "c2",
+    conversationId: "v2",
+    stage: "qualified",
+    amount: 2400,
+    currency: "USD",
+    probability: 40,
+    expectedCloseAt: now + 1000 * 60 * 60 * 24 * 12,
+    owner: "Laura R.",
+    tags: ["B2B", "LinkedIn"],
+    attachments: [
+      { id: "a3", name: "brief-empresa.docx", kind: "doc", size: "78 KB", source: "chat", uploadedBy: "Carlos", createdAt: m(40) },
+    ],
+    comments: [],
+    createdAt: h(48),
+    updatedAt: m(25),
+  },
+  {
+    id: "d3",
+    title: "Cambio de suscripción — Sofía Pérez",
+    contactId: "c5",
+    conversationId: "v4",
+    stage: "proposal",
+    amount: 79,
+    currency: "USD",
+    probability: 55,
+    expectedCloseAt: now + 1000 * 60 * 60 * 24 * 2,
+    owner: "Laura R.",
+    tags: ["Upsell"],
+    attachments: [
+      { id: "a4", name: "comparativa-planes.xlsx", kind: "sheet", size: "44 KB", source: "reference", uploadedBy: "Laura R.", createdAt: h(2) },
+    ],
+    comments: [
+      { id: "co2", author: "Laura R.", text: "Le interesa el plan Team. Revisar disponibilidad.", createdAt: h(1.5) },
+    ],
+    createdAt: h(10),
+    updatedAt: h(1.5),
+  },
+  {
+    id: "d4",
+    title: "Cotización inicial — Diego Torres",
+    contactId: "c6",
+    conversationId: "v5",
+    stage: "new",
+    amount: 0,
+    currency: "USD",
+    probability: 15,
+    expectedCloseAt: now + 1000 * 60 * 60 * 24 * 20,
+    owner: "Laura R.",
+    tags: ["Lead"],
+    attachments: [],
+    comments: [],
+    createdAt: h(6),
+    updatedAt: h(5),
+  },
+  {
+    id: "d5",
+    title: "Renovación anual — Elena Castro",
+    contactId: "c7",
+    conversationId: "v6",
+    stage: "won",
+    amount: 348,
+    currency: "EUR",
+    probability: 100,
+    expectedCloseAt: now - 1000 * 60 * 60 * 18,
+    owner: "Laura R.",
+    tags: ["Renovación"],
+    attachments: [
+      { id: "a5", name: "factura-2026.pdf", kind: "pdf", size: "212 KB", source: "reference", uploadedBy: "Sistema", createdAt: h(19) },
+    ],
+    comments: [
+      { id: "co3", author: "Laura R.", text: "Cliente feliz, pidió referidos.", createdAt: h(19) },
+    ],
+    createdAt: h(72),
+    updatedAt: h(19),
+  },
 ];

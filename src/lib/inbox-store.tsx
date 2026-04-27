@@ -1,6 +1,15 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { initialContacts, initialConversations, initialMessages } from "./inbox-data";
-import { BOT_PAUSE_MS, type Contact, type Conversation, type Message } from "./inbox-types";
+import { initialContacts, initialConversations, initialDeals, initialMessages } from "./inbox-data";
+import {
+  BOT_PAUSE_MS,
+  type Attachment,
+  type Contact,
+  type Conversation,
+  type Deal,
+  type DealComment,
+  type DealStage,
+  type Message,
+} from "./inbox-types";
 
 interface InboxState {
   contacts: Contact[];
@@ -15,6 +24,16 @@ interface InboxState {
   resolveConversation: (conversationId: string) => void;
   /** Simulates an incoming message from a contact (for the demo webhook button) */
   simulateIncoming: (contactId: string, text: string) => void;
+  // Sales pipeline
+  deals: Deal[];
+  selectedDealId: string | null;
+  selectDeal: (id: string | null) => void;
+  moveDeal: (dealId: string, stage: DealStage) => void;
+  updateDeal: (dealId: string, patch: Partial<Pick<Deal, "title" | "amount" | "currency" | "probability" | "expectedCloseAt" | "owner" | "tags">>) => void;
+  addDealAttachment: (dealId: string, attachment: Omit<Attachment, "id" | "createdAt">) => void;
+  removeDealAttachment: (dealId: string, attachmentId: string) => void;
+  addDealComment: (dealId: string, text: string, author?: string) => void;
+  createDeal: (input: { title: string; contactId: string; stage?: DealStage; amount?: number; currency?: string }) => string;
 }
 
 const InboxContext = createContext<InboxState | null>(null);
@@ -28,6 +47,8 @@ export function InboxProvider({ children }: { children: ReactNode }) {
   const [conversations, setConversations] = useState<Conversation[]>(initialConversations);
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>("v1");
+  const [deals, setDeals] = useState<Deal[]>(initialDeals);
+  const [selectedDealId, setSelectedDealId] = useState<string | null>(initialDeals[0]?.id ?? null);
 
   // Tick every 30s so the "bot paused" countdown re-renders
   const [, setTick] = useState(0);
@@ -119,6 +140,61 @@ export function InboxProvider({ children }: { children: ReactNode }) {
     }
   }, [contacts, conversations, selectedConversationId]);
 
+  const selectDeal = useCallback((id: string | null) => setSelectedDealId(id), []);
+
+  const moveDeal = useCallback((dealId: string, stage: DealStage) => {
+    setDeals((prev) => prev.map((d) => (d.id === dealId ? { ...d, stage, updatedAt: Date.now() } : d)));
+  }, []);
+
+  const updateDeal = useCallback<InboxState["updateDeal"]>((dealId, patch) => {
+    setDeals((prev) => prev.map((d) => (d.id === dealId ? { ...d, ...patch, updatedAt: Date.now() } : d)));
+  }, []);
+
+  const addDealAttachment = useCallback<InboxState["addDealAttachment"]>((dealId, attachment) => {
+    const att: Attachment = { ...attachment, id: uid(), createdAt: Date.now() };
+    setDeals((prev) => prev.map((d) => (d.id === dealId ? { ...d, attachments: [att, ...d.attachments], updatedAt: Date.now() } : d)));
+  }, []);
+
+  const removeDealAttachment = useCallback<InboxState["removeDealAttachment"]>((dealId, attachmentId) => {
+    setDeals((prev) =>
+      prev.map((d) =>
+        d.id === dealId ? { ...d, attachments: d.attachments.filter((a) => a.id !== attachmentId), updatedAt: Date.now() } : d,
+      ),
+    );
+  }, []);
+
+  const addDealComment = useCallback<InboxState["addDealComment"]>((dealId, text, author = "Tú") => {
+    const t = text.trim();
+    if (!t) return;
+    const c: DealComment = { id: uid(), author, text: t, createdAt: Date.now() };
+    setDeals((prev) => prev.map((d) => (d.id === dealId ? { ...d, comments: [...d.comments, c], updatedAt: Date.now() } : d)));
+  }, []);
+
+  const createDeal = useCallback<InboxState["createDeal"]>((input) => {
+    const id = uid();
+    const conv = conversations.find((c) => c.contactId === input.contactId);
+    const deal: Deal = {
+      id,
+      title: input.title || "Nueva oportunidad",
+      contactId: input.contactId,
+      conversationId: conv?.id,
+      stage: input.stage ?? "new",
+      amount: input.amount ?? 0,
+      currency: input.currency ?? "USD",
+      probability: 20,
+      expectedCloseAt: Date.now() + 1000 * 60 * 60 * 24 * 14,
+      owner: "Laura R.",
+      tags: [],
+      attachments: [],
+      comments: [],
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    };
+    setDeals((prev) => [deal, ...prev]);
+    setSelectedDealId(id);
+    return id;
+  }, [conversations]);
+
   const value = useMemo<InboxState>(
     () => ({
       contacts,
@@ -132,8 +208,38 @@ export function InboxProvider({ children }: { children: ReactNode }) {
       markAsRead,
       resolveConversation,
       simulateIncoming,
+      deals,
+      selectedDealId,
+      selectDeal,
+      moveDeal,
+      updateDeal,
+      addDealAttachment,
+      removeDealAttachment,
+      addDealComment,
+      createDeal,
     }),
-    [contacts, conversations, messages, selectedConversationId, selectConversation, sendAgentMessage, toggleBlockContact, resumeBot, markAsRead, resolveConversation, simulateIncoming],
+    [
+      contacts,
+      conversations,
+      messages,
+      selectedConversationId,
+      selectConversation,
+      sendAgentMessage,
+      toggleBlockContact,
+      resumeBot,
+      markAsRead,
+      resolveConversation,
+      simulateIncoming,
+      deals,
+      selectedDealId,
+      selectDeal,
+      moveDeal,
+      updateDeal,
+      addDealAttachment,
+      removeDealAttachment,
+      addDealComment,
+      createDeal,
+    ],
   );
 
   return <InboxContext.Provider value={value}>{children}</InboxContext.Provider>;

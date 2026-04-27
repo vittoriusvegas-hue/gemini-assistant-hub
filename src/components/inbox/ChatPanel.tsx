@@ -130,7 +130,9 @@ export function ChatPanel() {
                   >
                     {m.text}
                   </div>
-                  <span className="mt-1 text-[10px] text-muted-foreground">{format(m.createdAt, "p", { locale: es })}</span>
+                  <span className="mt-1 text-[10px] text-muted-foreground" suppressHydrationWarning>
+                    {format(m.createdAt, "p", { locale: es })}
+                  </span>
                 </div>
               </div>
             );

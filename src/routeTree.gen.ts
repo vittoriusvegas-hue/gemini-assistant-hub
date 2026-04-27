@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as SalesRouteImport } from './routes/sales'
 import { Route as ContactsRouteImport } from './routes/contacts'
 import { Route as BotRouteImport } from './routes/bot'
 import { Route as AnalyticsRouteImport } from './routes/analytics'
@@ -18,6 +19,11 @@ import { Route as IndexRouteImport } from './routes/index'
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SalesRoute = SalesRouteImport.update({
+  id: '/sales',
+  path: '/sales',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ContactsRoute = ContactsRouteImport.update({
@@ -46,6 +52,7 @@ export interface FileRoutesByFullPath {
   '/analytics': typeof AnalyticsRoute
   '/bot': typeof BotRoute
   '/contacts': typeof ContactsRoute
+  '/sales': typeof SalesRoute
   '/settings': typeof SettingsRoute
 }
 export interface FileRoutesByTo {
@@ -53,6 +60,7 @@ export interface FileRoutesByTo {
   '/analytics': typeof AnalyticsRoute
   '/bot': typeof BotRoute
   '/contacts': typeof ContactsRoute
+  '/sales': typeof SalesRoute
   '/settings': typeof SettingsRoute
 }
 export interface FileRoutesById {
@@ -61,14 +69,22 @@ export interface FileRoutesById {
   '/analytics': typeof AnalyticsRoute
   '/bot': typeof BotRoute
   '/contacts': typeof ContactsRoute
+  '/sales': typeof SalesRoute
   '/settings': typeof SettingsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/analytics' | '/bot' | '/contacts' | '/settings'
+  fullPaths: '/' | '/analytics' | '/bot' | '/contacts' | '/sales' | '/settings'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/analytics' | '/bot' | '/contacts' | '/settings'
-  id: '__root__' | '/' | '/analytics' | '/bot' | '/contacts' | '/settings'
+  to: '/' | '/analytics' | '/bot' | '/contacts' | '/sales' | '/settings'
+  id:
+    | '__root__'
+    | '/'
+    | '/analytics'
+    | '/bot'
+    | '/contacts'
+    | '/sales'
+    | '/settings'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -76,6 +92,7 @@ export interface RootRouteChildren {
   AnalyticsRoute: typeof AnalyticsRoute
   BotRoute: typeof BotRoute
   ContactsRoute: typeof ContactsRoute
+  SalesRoute: typeof SalesRoute
   SettingsRoute: typeof SettingsRoute
 }
 
@@ -86,6 +103,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sales': {
+      id: '/sales'
+      path: '/sales'
+      fullPath: '/sales'
+      preLoaderRoute: typeof SalesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/contacts': {
@@ -124,6 +148,7 @@ const rootRouteChildren: RootRouteChildren = {
   AnalyticsRoute: AnalyticsRoute,
   BotRoute: BotRoute,
   ContactsRoute: ContactsRoute,
+  SalesRoute: SalesRoute,
   SettingsRoute: SettingsRoute,
 }
 export const routeTree = rootRouteImport
