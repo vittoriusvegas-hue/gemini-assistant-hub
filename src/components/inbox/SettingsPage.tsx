@@ -19,6 +19,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { AccountSettings } from "./AccountSettings";
+import { WhatsAppConnect } from "./WhatsAppConnect";
 
 const MODELS: { id: GeminiModel; label: string; hint: string }[] = [
   { id: "gemini-2.5-flash-lite", label: "Gemini 2.5 Flash Lite", hint: "Más rápido y económico" },
@@ -234,9 +235,9 @@ export function SettingsPage() {
           <TabsContent value="integrations" className="mt-6">
             <section className="rounded-xl border bg-card p-6 shadow-sm space-y-3">
               <h2 className="text-base font-semibold">Canales conectados</h2>
+              <WhatsAppConnect />
               {[
                 { name: "Webhook genérico", status: "Conectado" },
-                { name: "WhatsApp Business", status: "No conectado" },
                 { name: "Instagram", status: "No conectado" },
                 { name: "Messenger", status: "No conectado" },
               ].map((c) => (
