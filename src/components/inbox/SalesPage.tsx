@@ -256,7 +256,7 @@ export function SalesPage() {
 }
 
 function DealDetail({ deal, onClose }: { deal: Deal; onClose: () => void }) {
-  const { contacts, messages, addDealAttachment, removeDealAttachment, addDealComment, updateDeal, moveDeal } = useInbox();
+  const { contacts, messages, addDealAttachment, removeDealAttachment, addDealComment, updateDeal, moveDeal, pipelineStages } = useInbox();
   const contact = contacts.find((c) => c.id === deal.contactId);
   const chatFiles = useMemo(
     () => messages.filter((m) => m.conversationId === deal.conversationId && /\.(png|jpg|jpeg|pdf|docx?|xlsx?)$/i.test(m.text)),
@@ -303,10 +303,10 @@ function DealDetail({ deal, onClose }: { deal: Deal; onClose: () => void }) {
             <div className="flex items-center gap-2">
               <span
                 className="h-2 w-2 rounded-full"
-                style={{ backgroundColor: DEAL_STAGES.find((s) => s.id === deal.stage)?.accent }}
+                style={{ backgroundColor: pipelineStages.find((s) => s.id === deal.stage)?.accent }}
               />
               <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                {DEAL_STAGES.find((s) => s.id === deal.stage)?.label}
+                {pipelineStages.find((s) => s.id === deal.stage)?.label ?? deal.stage}
               </span>
             </div>
             <h2 className="mt-1 truncate text-base font-semibold">{deal.title}</h2>
@@ -346,7 +346,7 @@ function DealDetail({ deal, onClose }: { deal: Deal; onClose: () => void }) {
 
         {/* Stage selector */}
         <div className="flex flex-wrap gap-1.5 border-b px-5 py-3">
-          {DEAL_STAGES.map((s) => {
+          {pipelineStages.map((s) => {
             const active = s.id === deal.stage;
             return (
               <button
