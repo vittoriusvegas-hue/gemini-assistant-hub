@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Bot, Send, CheckCircle2, Play, Paperclip, Smile, MoreHorizontal } from "lucide-react";
+import { Bot, Send, CheckCircle2, Play, Paperclip, Smile, MoreHorizontal, TrendingUp } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
+import { toast } from "sonner";
 import { useInbox } from "@/lib/inbox-store";
 import { ContactAvatar } from "./Avatar";
 import { ChannelBadge } from "./ChannelBadge";
@@ -18,7 +20,9 @@ function formatRemaining(ms: number) {
 }
 
 export function ChatPanel() {
-  const { selectedConversationId, conversations, contacts, messages, sendAgentMessage, resumeBot, resolveConversation } = useInbox();
+  const { selectedConversationId, conversations, contacts, messages, sendAgentMessage, resumeBot, resolveConversation, deals, createDeal, pipelineStages, selectDeal } =
+    useInbox();
+  const navigate = useNavigate();
   const conv = conversations.find((c) => c.id === selectedConversationId) ?? null;
   const contact = conv ? contacts.find((c) => c.id === conv.contactId) ?? null : null;
   const thread = useMemo(
@@ -27,6 +31,7 @@ export function ChatPanel() {
   );
 
   const [draft, setDraft] = useState("");
+  const [showDeal, setShowDeal] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -43,11 +48,20 @@ export function ChatPanel() {
 
   const paused = conv.botPausedUntil && conv.botPausedUntil > Date.now();
   const remaining = paused ? conv.botPausedUntil! - Date.now() : 0;
+  const existingDeal = deals.find((d) => d.contactId === contact.id);
 
   const onSend = () => {
     if (!draft.trim()) return;
     sendAgentMessage(conv.id, draft);
     setDraft("");
+  };
+
+  const handleCreateDeal = (input: { title: string; amount: number; currency: string; stage: string }) => {
+    const id = createDeal({ title: input.title, contactId: contact.id, amount: input.amount, currency: input.currency, stage: input.stage });
+    setShowDeal(false);
+    toast.success("Oportunidad creada", { description: `${input.title} se añadió al embudo.` });
+    selectDeal(id);
+    navigate({ to: "/sales" });
   };
 
   return (
@@ -64,6 +78,28 @@ export function ChatPanel() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {existingDeal ? (
+            <button
+              onClick={() => {
+                selectDeal(existingDeal.id);
+                navigate({ to: "/sales" });
+              }}
+              className="inline-flex items-center gap-1.5 rounded-lg border bg-primary-soft px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/15"
+              title="Ver oportunidad en el embudo"
+            >
+              <TrendingUp className="h-3.5 w-3.5" />
+              Ver en embudo
+            </button>
+          ) : (
+            <button
+              onClick={() => setShowDeal(true)}
+              className="inline-flex items-center gap-1.5 rounded-lg border bg-background px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted"
+              title="Crear una oportunidad de venta a partir de esta conversación"
+            >
+              <TrendingUp className="h-3.5 w-3.5" />
+              Enviar al embudo
+            </button>
+          )}
           <button
             onClick={() => resolveConversation(conv.id)}
             className="inline-flex items-center gap-1.5 rounded-lg border bg-background px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted"
@@ -76,6 +112,15 @@ export function ChatPanel() {
           </button>
         </div>
       </div>
+
+      {showDeal && (
+        <SendToFunnelDialog
+          contactName={contact.name}
+          stages={pipelineStages.map((s) => ({ id: s.id, label: s.label }))}
+          onClose={() => setShowDeal(false)}
+          onSubmit={handleCreateDeal}
+        />
+      )}
 
       {(paused || contact.blocked) && (
         <div
@@ -168,6 +213,95 @@ export function ChatPanel() {
           >
             <Send className="h-3.5 w-3.5" />
             Enviar
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SendToFunnelDialog({
+  contactName,
+  stages,
+  onClose,
+  onSubmit,
+}: {
+  contactName: string;
+  stages: { id: string; label: string }[];
+  onClose: () => void;
+  onSubmit: (input: { title: string; amount: number; currency: string; stage: string }) => void;
+}) {
+  const [title, setTitle] = useState(`Oportunidad — ${contactName}`);
+  const [amount, setAmount] = useState(0);
+  const [currency, setCurrency] = useState("USD");
+  const [stage, setStage] = useState(stages[0]?.id ?? "new");
+
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4" onClick={onClose}>
+      <div onClick={(e) => e.stopPropagation()} className="w-full max-w-md rounded-2xl border bg-card p-5 shadow-2xl">
+        <div className="mb-1 flex items-center gap-2">
+          <TrendingUp className="h-4 w-4 text-primary" />
+          <h3 className="text-base font-semibold">Enviar al embudo</h3>
+        </div>
+        <p className="mb-4 text-xs text-muted-foreground">Crea una oportunidad de venta vinculada a esta conversación.</p>
+        <div className="flex flex-col gap-3 text-sm">
+          <label>
+            <span className="mb-1 block text-xs font-medium text-muted-foreground">Título</span>
+            <input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="h-9 w-full rounded-lg border bg-background px-3 outline-none focus:ring-2 focus:ring-ring/40"
+            />
+          </label>
+          <div className="grid grid-cols-2 gap-3">
+            <label>
+              <span className="mb-1 block text-xs font-medium text-muted-foreground">Monto</span>
+              <input
+                type="number"
+                value={amount}
+                onChange={(e) => setAmount(Number(e.target.value) || 0)}
+                className="h-9 w-full rounded-lg border bg-background px-2 outline-none focus:ring-2 focus:ring-ring/40"
+              />
+            </label>
+            <label>
+              <span className="mb-1 block text-xs font-medium text-muted-foreground">Moneda</span>
+              <select
+                value={currency}
+                onChange={(e) => setCurrency(e.target.value)}
+                className="h-9 w-full rounded-lg border bg-background px-2 outline-none focus:ring-2 focus:ring-ring/40"
+              >
+                <option>USD</option>
+                <option>EUR</option>
+                <option>MXN</option>
+                <option>ARS</option>
+              </select>
+            </label>
+          </div>
+          <label>
+            <span className="mb-1 block text-xs font-medium text-muted-foreground">Etapa inicial</span>
+            <select
+              value={stage}
+              onChange={(e) => setStage(e.target.value)}
+              className="h-9 w-full rounded-lg border bg-background px-2 outline-none focus:ring-2 focus:ring-ring/40"
+            >
+              {stages.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+        <div className="mt-5 flex justify-end gap-2">
+          <button onClick={onClose} className="rounded-lg border px-3 py-1.5 text-sm hover:bg-muted">
+            Cancelar
+          </button>
+          <button
+            onClick={() => title.trim() && onSubmit({ title: title.trim(), amount, currency, stage })}
+            disabled={!title.trim()}
+            className="rounded-lg bg-[var(--gradient-brand)] px-3 py-1.5 text-sm font-medium text-primary-foreground shadow-[var(--shadow-pop)] disabled:opacity-40"
+          >
+            Crear y abrir
           </button>
         </div>
       </div>
