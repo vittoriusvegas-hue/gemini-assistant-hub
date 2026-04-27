@@ -10,7 +10,7 @@ export const Route = createFileRoute("/analytics")({
 function AnalyticsRoute() {
   return (
     
-      <div className="flex h-screen w-screen overflow-hidden bg-background">
+      <div className="flex h-[100dvh] w-screen overflow-hidden bg-background">
         <Sidebar />
         <ComingSoon title="Métricas" description="Aquí verás conversaciones por canal, tiempos de respuesta y rendimiento del bot." />
       </div>
