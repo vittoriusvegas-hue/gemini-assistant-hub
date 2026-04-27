@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { AccountSettings } from "./AccountSettings";
 
 const MODELS: { id: GeminiModel; label: string; hint: string }[] = [
   { id: "gemini-2.5-flash-lite", label: "Gemini 2.5 Flash Lite", hint: "Más rápido y económico" },
@@ -211,18 +212,7 @@ export function SettingsPage() {
 
           {/* OTHER TABS - placeholders */}
           <TabsContent value="account" className="mt-6">
-            <section className="rounded-xl border bg-card p-6 shadow-sm space-y-4">
-              <h2 className="text-base font-semibold">Perfil del agente</h2>
-              <div className="grid gap-2">
-                <Label>Nombre</Label>
-                <Input defaultValue="Laura R." />
-              </div>
-              <div className="grid gap-2">
-                <Label>Email</Label>
-                <Input type="email" defaultValue="laura@pulse.app" />
-              </div>
-              <Button onClick={() => toast.success("Perfil actualizado")} className="w-fit">Guardar</Button>
-            </section>
+            <AccountSettings />
           </TabsContent>
 
           <TabsContent value="notifications" className="mt-6">
