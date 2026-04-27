@@ -1,8 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import QRCode from "qrcode";
-// Reference the type-augmentation file so the `server` option is registered on
-// createFileRoute. (export type * doesn't always propagate `declare module`.)
-/// <reference types="@tanstack/start-client-core" />
+// Pull in the module augmentation that adds the `server` field to createFileRoute.
+import type {} from "@tanstack/start-client-core";
 
 /**
  * Demo en memoria del estado de sesiones de WhatsApp.
