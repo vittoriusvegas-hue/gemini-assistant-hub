@@ -2,6 +2,8 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { initialContacts, initialConversations, initialDeals, initialMessages } from "./inbox-data";
 import {
   BOT_PAUSE_MS,
+  DEFAULT_AI_SETTINGS,
+  type AISettings,
   type Attachment,
   type Contact,
   type Conversation,
@@ -40,6 +42,10 @@ interface InboxState {
   removeDealAttachment: (dealId: string, attachmentId: string) => void;
   addDealComment: (dealId: string, text: string, author?: string) => void;
   createDeal: (input: { title: string; contactId: string; stage?: DealStage; amount?: number; currency?: string }) => string;
+  // AI settings
+  aiSettings: AISettings;
+  updateAISettings: (patch: Partial<AISettings>) => void;
+  resetAISettings: () => void;
 }
 
 const InboxContext = createContext<InboxState | null>(null);
@@ -66,6 +72,7 @@ export function InboxProvider({ children }: { children: ReactNode }) {
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>("v1");
   const [deals, setDeals] = useState<Deal[]>(initialDeals);
   const [selectedDealId, setSelectedDealId] = useState<string | null>(initialDeals[0]?.id ?? null);
+  const [aiSettings, setAISettings] = useState<AISettings>(DEFAULT_AI_SETTINGS);
 
   // Tick every 30s so the "bot paused" countdown re-renders
   const [, setTick] = useState(0);
@@ -261,6 +268,11 @@ export function InboxProvider({ children }: { children: ReactNode }) {
     return id;
   }, [conversations]);
 
+  const updateAISettings = useCallback((patch: Partial<AISettings>) => {
+    setAISettings((prev) => ({ ...prev, ...patch }));
+  }, []);
+  const resetAISettings = useCallback(() => setAISettings(DEFAULT_AI_SETTINGS), []);
+
   const value = useMemo<InboxState>(
     () => ({
       contacts,
@@ -288,6 +300,9 @@ export function InboxProvider({ children }: { children: ReactNode }) {
       removeDealAttachment,
       addDealComment,
       createDeal,
+      aiSettings,
+      updateAISettings,
+      resetAISettings,
     }),
     [
       contacts,
@@ -315,6 +330,9 @@ export function InboxProvider({ children }: { children: ReactNode }) {
       removeDealAttachment,
       addDealComment,
       createDeal,
+      aiSettings,
+      updateAISettings,
+      resetAISettings,
     ],
   );
 

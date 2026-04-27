@@ -34,6 +34,36 @@ export interface Conversation {
 
 export const BOT_PAUSE_MS = 30 * 60 * 1000; // 30 minutes
 
+export type GeminiModel =
+  | "gemini-2.5-flash-lite"
+  | "gemini-2.5-flash"
+  | "gemini-2.5-pro"
+  | "gemini-3-flash-preview"
+  | "gemini-3.1-pro-preview";
+
+export interface AISettings {
+  enabled: boolean;
+  model: GeminiModel;
+  systemPrompt: string;
+  /** Delay before bot replies, in seconds */
+  responseDelaySec: number;
+  /** Pause time after agent reply, in minutes */
+  pauseAfterAgentMin: number;
+  temperature: number;
+  maxTokens: number;
+}
+
+export const DEFAULT_AI_SETTINGS: AISettings = {
+  enabled: true,
+  model: "gemini-2.5-flash",
+  systemPrompt:
+    "Eres un asistente de ventas amable y profesional. Responde en el idioma del cliente, sé conciso y útil. Si no sabes algo, ofrece escalar a un agente humano.",
+  responseDelaySec: 1.2,
+  pauseAfterAgentMin: 30,
+  temperature: 0.7,
+  maxTokens: 512,
+};
+
 export type DealStage = "new" | "qualified" | "proposal" | "negotiation" | "won" | "lost";
 
 export const DEAL_STAGES: { id: DealStage; label: string; accent: string }[] = [
