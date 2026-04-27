@@ -220,6 +220,23 @@ export function InboxProvider({ children }: { children: ReactNode }) {
     });
   }, [conversations]);
 
+  const saveContact = useCallback<InboxState["saveContact"]>((contactId, patch) => {
+    setContacts((prev) =>
+      prev.map((c) => {
+        if (c.id !== contactId) return c;
+        const isPlaceholderColor = !c.avatarColor || c.avatarColor.includes("0.04");
+        return {
+          ...c,
+          ...patch,
+          saved: true,
+          avatarColor: isPlaceholderColor
+            ? AVATAR_COLORS[Math.floor(Math.random() * AVATAR_COLORS.length)]
+            : c.avatarColor,
+        };
+      }),
+    );
+  }, []);
+
   const addContactTag = useCallback<InboxState["addContactTag"]>((contactId, tag) => {
     const t = tag.trim();
     if (!t) return;
