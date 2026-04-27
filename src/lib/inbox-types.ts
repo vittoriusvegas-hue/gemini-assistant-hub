@@ -109,7 +109,8 @@ export const DEFAULT_ACCOUNT_SETTINGS: AccountSettings = {
   twoFactorEnabled: false,
 };
 
-export type DealStage = "new" | "qualified" | "proposal" | "negotiation" | "won" | "lost";
+/** Stage id — string so it supports user-defined custom stages. */
+export type DealStage = string;
 
 export interface PipelineStage {
   id: string;
