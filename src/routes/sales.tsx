@@ -15,7 +15,7 @@ export const Route = createFileRoute("/sales")({
 function SalesRoute() {
   return (
     
-      <div className="flex h-screen w-screen overflow-hidden bg-background">
+      <div className="flex h-[100dvh] w-screen overflow-hidden bg-background">
         <Sidebar />
         <SalesPage />
       </div>

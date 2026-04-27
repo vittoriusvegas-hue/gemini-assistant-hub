@@ -29,7 +29,7 @@ export function ConversationList() {
   }, [conversations, contacts, messages, q, tab]);
 
   return (
-    <div className="flex w-[340px] shrink-0 flex-col border-r bg-card">
+    <div className="flex w-full md:w-[340px] shrink-0 flex-col border-r bg-card">
       <div className="border-b px-4 pt-4 pb-3">
         <div className="flex items-center justify-between">
           <h2 className="text-base font-semibold tracking-tight">Bandeja</h2>
@@ -61,7 +61,7 @@ export function ConversationList() {
           ))}
         </div>
       </div>
-      <ul className="flex-1 overflow-y-auto">
+      <ul className="flex-1 overflow-y-auto pb-16 md:pb-0">
         {items.map(({ conv, contact, last }) => {
           const active = conv.id === selectedConversationId;
           const paused = conv.botPausedUntil && conv.botPausedUntil > Date.now();

@@ -56,7 +56,7 @@ export function ContactsPage() {
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
-      <header className="flex items-center justify-between gap-4 border-b bg-card/60 backdrop-blur px-8 py-5">
+      <header className="flex items-center justify-between gap-4 border-b bg-card/60 backdrop-blur px-4 py-4 md:px-8 md:py-5">
         <div>
           <h1 className="text-xl font-semibold tracking-tight">Contactos</h1>
           <p className="text-sm text-muted-foreground">Gestiona quién puede interactuar con el bot.</p>
@@ -69,7 +69,7 @@ export function ContactsPage() {
         </button>
       </header>
 
-      <div className="flex items-center gap-3 border-b bg-card px-8 py-3">
+      <div className="flex items-center gap-3 border-b bg-card px-4 py-3 md:px-8">
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input
@@ -95,7 +95,7 @@ export function ContactsPage() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-8 py-4">
+      <div className="flex-1 overflow-y-auto px-4 py-4 pb-20 md:px-8 md:pb-4">
         <div className="overflow-hidden rounded-2xl border bg-card shadow-[var(--shadow-soft)]">
           <table className="w-full text-sm">
             <thead className="bg-secondary text-xs uppercase tracking-wider text-muted-foreground">

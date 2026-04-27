@@ -117,12 +117,12 @@ export function SalesPage() {
   return (
     <div className="flex flex-1 min-w-0 flex-col">
       {/* Top bar */}
-      <header className="flex items-center justify-between gap-4 border-b bg-card px-6 py-4">
-        <div>
+      <header className="flex flex-wrap items-center justify-between gap-3 border-b bg-card px-4 py-3 md:px-6 md:py-4">
+        <div className="min-w-0">
           <h1 className="text-lg font-semibold tracking-tight">Embudo de Ventas</h1>
-          <p className="text-xs text-muted-foreground">Gestiona tus oportunidades, archivos y comentarios.</p>
+          <p className="hidden text-xs text-muted-foreground sm:block">Gestiona tus oportunidades, archivos y comentarios.</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 md:gap-3">
           <div className="hidden md:flex items-center gap-4 rounded-xl border bg-background px-4 py-2 text-xs">
             <div className="flex items-center gap-2">
               <span className="h-2 w-2 rounded-full bg-primary" />
@@ -140,32 +140,32 @@ export function SalesPage() {
               <span className="font-semibold">{fmtMoney(totals.wonAmount, "USD")}</span>
             </div>
           </div>
-          <div className="relative">
+          <div className="relative w-full sm:w-auto">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Buscar oportunidad, contacto, etiqueta…"
-              className="h-9 w-72 rounded-lg border bg-background pl-9 pr-3 text-sm outline-none focus:ring-2 focus:ring-ring/40"
+              className="h-9 w-full rounded-lg border bg-background pl-9 pr-3 text-sm outline-none focus:ring-2 focus:ring-ring/40 sm:w-72"
             />
           </div>
           <button
             onClick={() => setShowCustomize(true)}
-            className="inline-flex h-9 items-center gap-1.5 rounded-lg border bg-background px-3 text-sm font-medium hover:bg-muted"
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted md:text-sm"
           >
-            <Settings2 className="h-4 w-4" /> Personalizar embudo
+            <Settings2 className="h-4 w-4" /> <span className="hidden sm:inline">Personalizar embudo</span>
           </button>
           <button
             onClick={() => setShowNew(true)}
-            className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[var(--gradient-brand)] px-3 text-sm font-medium text-primary-foreground shadow-[var(--shadow-pop)] hover:opacity-95"
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[var(--gradient-brand)] px-3 text-xs font-medium text-primary-foreground shadow-[var(--shadow-pop)] hover:opacity-95 md:text-sm"
           >
-            <Plus className="h-4 w-4" /> Nueva oportunidad
+            <Plus className="h-4 w-4" /> <span className="hidden sm:inline">Nueva oportunidad</span>
           </button>
         </div>
       </header>
 
       {/* Kanban */}
-      <div className="flex flex-1 min-h-0 overflow-x-auto overflow-y-hidden bg-muted/30 px-4 py-4">
+      <div className="flex flex-1 min-h-0 overflow-x-auto overflow-y-hidden bg-muted/30 px-3 py-4 pb-20 md:px-4 md:pb-4">
         <div className="flex gap-3">
           {pipelineStages.map((stage) => {
             const items = grouped.get(stage.id) ?? [];

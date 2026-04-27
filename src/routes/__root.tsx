@@ -3,6 +3,9 @@ import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/r
 import appCss from "../styles.css?url";
 import { Toaster } from "@/components/ui/sonner";
 import { InboxProvider } from "@/lib/inbox-store";
+import { AuthProvider, useAuth } from "@/lib/auth-store";
+import { LoginScreen } from "@/components/inbox/LoginScreen";
+import { MobileNav } from "@/components/inbox/MobileNav";
 
 function NotFoundComponent() {
   return (
@@ -30,12 +33,12 @@ export const Route = createRootRoute({
   head: () => ({
     meta: [
       { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
+      { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
+      { title: "Pulse Inbox" },
+      { name: "description", content: "Bandeja unificada con IA Gemini." },
       { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { property: "og:title", content: "Pulse Inbox" },
+      { property: "og:description", content: "Bandeja unificada con IA Gemini." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
@@ -54,7 +57,7 @@ export const Route = createRootRoute({
 
 function RootShell({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="es">
       <head>
         <HeadContent />
       </head>
@@ -66,11 +69,29 @@ function RootShell({ children }: { children: React.ReactNode }) {
   );
 }
 
-function RootComponent() {
+function AuthGate() {
+  const { isAuthenticated, loading } = useAuth();
+  if (loading) {
+    return (
+      <div className="grid min-h-screen place-items-center bg-background">
+        <div className="h-10 w-10 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+      </div>
+    );
+  }
+  if (!isAuthenticated) return <LoginScreen />;
   return (
     <InboxProvider>
       <Outlet />
-      <Toaster />
+      <MobileNav />
     </InboxProvider>
+  );
+}
+
+function RootComponent() {
+  return (
+    <AuthProvider>
+      <AuthGate />
+      <Toaster />
+    </AuthProvider>
   );
 }
