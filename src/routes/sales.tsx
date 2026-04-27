@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Sidebar } from "@/components/inbox/Sidebar";
 import { SalesPage } from "@/components/inbox/SalesPage";
-import { InboxProvider } from "@/lib/inbox-store";
 
 export const Route = createFileRoute("/sales")({
   head: () => ({
@@ -15,11 +14,11 @@ export const Route = createFileRoute("/sales")({
 
 function SalesRoute() {
   return (
-    <InboxProvider>
+    
       <div className="flex h-screen w-screen overflow-hidden bg-background">
         <Sidebar />
         <SalesPage />
       </div>
-    </InboxProvider>
+    
   );
 }
