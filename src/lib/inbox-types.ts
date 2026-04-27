@@ -19,6 +19,8 @@ export interface Contact {
   channel: Channel;
   tags: string[];
   blocked: boolean;
+  /** Whether the contact has been saved to the address book. Unsaved = inbound from unknown number. */
+  saved: boolean;
   createdAt: number;
 }
 

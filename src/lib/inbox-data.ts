@@ -5,14 +5,17 @@ const m = (min: number) => now - min * 60 * 1000;
 const h = (hr: number) => now - hr * 60 * 60 * 1000;
 
 export const initialContacts: Contact[] = [
-  { id: "c1", name: "María González", phone: "+34 612 345 678", email: "maria@example.com", avatarColor: "oklch(0.7 0.18 25)", channel: "whatsapp", tags: ["VIP", "Cliente"], blocked: false, createdAt: h(72) },
-  { id: "c2", name: "Carlos Ruiz", phone: "+52 55 1234 5678", email: "carlos@empresa.mx", avatarColor: "oklch(0.65 0.2 145)", channel: "whatsapp", tags: ["Lead"], blocked: false, createdAt: h(48) },
-  { id: "c3", name: "Ana Martínez", phone: "+34 698 112 233", avatarColor: "oklch(0.65 0.2 280)", channel: "instagram", tags: ["Soporte"], blocked: false, createdAt: h(24) },
-  { id: "c4", name: "Luis Fernández", phone: "+57 300 555 0199", avatarColor: "oklch(0.7 0.18 60)", channel: "webhook", tags: ["Spam?"], blocked: true, createdAt: h(120) },
-  { id: "c5", name: "Sofía Pérez", phone: "+54 11 4455 6677", email: "sofia@correo.ar", avatarColor: "oklch(0.65 0.2 200)", channel: "messenger", tags: ["Cliente"], blocked: false, createdAt: h(10) },
-  { id: "c6", name: "Diego Torres", phone: "+51 987 654 321", avatarColor: "oklch(0.6 0.22 320)", channel: "whatsapp", tags: ["Lead"], blocked: false, createdAt: h(6) },
-  { id: "c7", name: "Elena Castro", phone: "+34 645 998 877", avatarColor: "oklch(0.7 0.16 100)", channel: "webhook", tags: [], blocked: false, createdAt: h(3) },
-  { id: "c8", name: "Pablo Rivas", phone: "+34 611 223 344", avatarColor: "oklch(0.55 0.22 15)", channel: "whatsapp", tags: ["Bloqueado"], blocked: true, createdAt: h(96) },
+  { id: "c1", name: "María González", phone: "+34 612 345 678", email: "maria@example.com", avatarColor: "oklch(0.7 0.18 25)", channel: "whatsapp", tags: ["VIP", "Cliente"], blocked: false, saved: true, createdAt: h(72) },
+  { id: "c2", name: "Carlos Ruiz", phone: "+52 55 1234 5678", email: "carlos@empresa.mx", avatarColor: "oklch(0.65 0.2 145)", channel: "whatsapp", tags: ["Lead"], blocked: false, saved: true, createdAt: h(48) },
+  { id: "c3", name: "Ana Martínez", phone: "+34 698 112 233", avatarColor: "oklch(0.65 0.2 280)", channel: "instagram", tags: ["Soporte"], blocked: false, saved: true, createdAt: h(24) },
+  { id: "c4", name: "Luis Fernández", phone: "+57 300 555 0199", avatarColor: "oklch(0.7 0.18 60)", channel: "webhook", tags: ["Spam?"], blocked: true, saved: true, createdAt: h(120) },
+  { id: "c5", name: "Sofía Pérez", phone: "+54 11 4455 6677", email: "sofia@correo.ar", avatarColor: "oklch(0.65 0.2 200)", channel: "messenger", tags: ["Cliente"], blocked: false, saved: true, createdAt: h(10) },
+  { id: "c6", name: "Diego Torres", phone: "+51 987 654 321", avatarColor: "oklch(0.6 0.22 320)", channel: "whatsapp", tags: ["Lead"], blocked: false, saved: true, createdAt: h(6) },
+  { id: "c7", name: "Elena Castro", phone: "+34 645 998 877", avatarColor: "oklch(0.7 0.16 100)", channel: "webhook", tags: [], blocked: false, saved: true, createdAt: h(3) },
+  { id: "c8", name: "Pablo Rivas", phone: "+34 611 223 344", avatarColor: "oklch(0.55 0.22 15)", channel: "whatsapp", tags: ["Bloqueado"], blocked: true, saved: true, createdAt: h(96) },
+  // Contactos no guardados — entraron por mensaje desde números desconocidos
+  { id: "c9", name: "+34 600 778 991", phone: "+34 600 778 991", avatarColor: "oklch(0.7 0.04 250)", channel: "whatsapp", tags: [], blocked: false, saved: false, createdAt: m(45) },
+  { id: "c10", name: "+1 415 555 0142", phone: "+1 415 555 0142", avatarColor: "oklch(0.7 0.04 250)", channel: "whatsapp", tags: [], blocked: false, saved: false, createdAt: h(4) },
 ];
 
 export const initialConversations: Conversation[] = [
@@ -22,6 +25,8 @@ export const initialConversations: Conversation[] = [
   { id: "v4", contactId: "c5", unread: 0, lastMessageAt: h(2), status: "open", botPausedUntil: null },
   { id: "v5", contactId: "c6", unread: 4, lastMessageAt: h(5), status: "open", botPausedUntil: null },
   { id: "v6", contactId: "c7", unread: 0, lastMessageAt: h(20), status: "resolved", botPausedUntil: null },
+  { id: "v7", contactId: "c9", unread: 1, lastMessageAt: m(45), status: "open", botPausedUntil: null },
+  { id: "v8", contactId: "c10", unread: 2, lastMessageAt: h(4), status: "open", botPausedUntil: null },
 ];
 
 export const initialMessages: Message[] = [
@@ -55,6 +60,14 @@ export const initialMessages: Message[] = [
   // v6 – Elena (resuelta)
   { id: "m18", conversationId: "v6", sender: "contact", text: "Gracias por la ayuda!", createdAt: h(20) },
   { id: "m19", conversationId: "v6", sender: "agent", text: "¡A ti! Que tengas buen día 🙌", createdAt: h(19.9) },
+
+  // v7 – Número desconocido
+  { id: "m20", conversationId: "v7", sender: "contact", text: "Hola, ¿esto es la tienda?", createdAt: m(46) },
+  { id: "m21", conversationId: "v7", sender: "bot", text: "¡Hola! Sí, en qué puedo ayudarte 😊", createdAt: m(45) },
+
+  // v8 – Otro número desconocido
+  { id: "m22", conversationId: "v8", sender: "contact", text: "Vi su anuncio, quiero más info", createdAt: h(4.1) },
+  { id: "m23", conversationId: "v8", sender: "contact", text: "¿Tienen envíos internacionales?", createdAt: h(4) },
 ];
 
 export const initialDeals: Deal[] = [
