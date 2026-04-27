@@ -1,9 +1,10 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { Bot, Inbox, Users, Settings, BarChart3, Sparkles } from "lucide-react";
+import { Bot, Inbox, Users, Settings, BarChart3, Sparkles, Trello } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const items = [
   { to: "/", label: "Bandeja", icon: Inbox },
+  { to: "/sales", label: "Ventas", icon: Trello },
   { to: "/contacts", label: "Contactos", icon: Users },
   { to: "/bot", label: "Bot IA", icon: Bot },
   { to: "/analytics", label: "Métricas", icon: BarChart3 },
