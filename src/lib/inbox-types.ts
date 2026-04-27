@@ -64,6 +64,51 @@ export const DEFAULT_AI_SETTINGS: AISettings = {
   maxTokens: 512,
 };
 
+export interface AccountSettings {
+  // Perfil
+  fullName: string;
+  displayName: string;
+  jobTitle: string;
+  bio: string;
+  avatarUrl?: string;
+  avatarColor: string;
+  // Contacto
+  email: string;
+  phone: string;
+  // Organización
+  company: string;
+  website: string;
+  // Preferencias
+  language: "es" | "en" | "pt" | "fr";
+  timezone: string;
+  dateFormat: "DD/MM/YYYY" | "MM/DD/YYYY" | "YYYY-MM-DD";
+  theme: "light" | "dark" | "system";
+  // Estado
+  status: "online" | "away" | "busy" | "offline";
+  signature: string;
+  // Seguridad
+  twoFactorEnabled: boolean;
+}
+
+export const DEFAULT_ACCOUNT_SETTINGS: AccountSettings = {
+  fullName: "Laura Ramírez",
+  displayName: "Laura R.",
+  jobTitle: "Agente de ventas",
+  bio: "Apasionada por crear experiencias memorables para los clientes.",
+  avatarColor: "oklch(0.65 0.2 280)",
+  email: "laura@pulse.app",
+  phone: "+52 55 1234 5678",
+  company: "Pulse Inbox",
+  website: "https://pulse.app",
+  language: "es",
+  timezone: "America/Mexico_City",
+  dateFormat: "DD/MM/YYYY",
+  theme: "system",
+  status: "online",
+  signature: "Saludos,\nLaura — Equipo Pulse",
+  twoFactorEnabled: false,
+};
+
 export type DealStage = "new" | "qualified" | "proposal" | "negotiation" | "won" | "lost";
 
 export const DEAL_STAGES: { id: DealStage; label: string; accent: string }[] = [
