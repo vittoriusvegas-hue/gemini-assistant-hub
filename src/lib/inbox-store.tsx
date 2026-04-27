@@ -34,6 +34,8 @@ interface InboxState {
   addContact: (input: Omit<Contact, "id" | "createdAt" | "blocked" | "tags" | "avatarColor" | "saved"> & { tags?: string[]; blocked?: boolean; avatarColor?: string; saved?: boolean }) => string;
   updateContact: (contactId: string, patch: Partial<Pick<Contact, "name" | "phone" | "email" | "channel" | "tags">>) => void;
   deleteContact: (contactId: string) => void;
+  /** Mark an unsaved (unknown-number) contact as saved, optionally updating its data. */
+  saveContact: (contactId: string, patch?: Partial<Pick<Contact, "name" | "email" | "tags" | "channel" | "phone">>) => void;
   addContactTag: (contactId: string, tag: string) => void;
   removeContactTag: (contactId: string, tag: string) => void;
   // Sales pipeline
