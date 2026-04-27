@@ -50,7 +50,7 @@ export function SettingsPage() {
   };
 
   return (
-    <main className="flex-1 overflow-y-auto bg-background">
+    <main className="flex-1 overflow-y-auto bg-background pb-20 md:pb-0">
       <div className="mx-auto max-w-4xl px-6 py-8">
         <header className="mb-6 flex items-start justify-between gap-4">
           <div>

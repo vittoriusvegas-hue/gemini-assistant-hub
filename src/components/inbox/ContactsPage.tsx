@@ -95,7 +95,7 @@ export function ContactsPage() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-8 py-4">
+      <div className="flex-1 overflow-y-auto px-4 py-4 pb-20 md:px-8 md:pb-4">
         <div className="overflow-hidden rounded-2xl border bg-card shadow-[var(--shadow-soft)]">
           <table className="w-full text-sm">
             <thead className="bg-secondary text-xs uppercase tracking-wider text-muted-foreground">

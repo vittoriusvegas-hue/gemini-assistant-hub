@@ -8,7 +8,7 @@ export function BotPage() {
   const handled = 142;
 
   return (
-    <div className="flex flex-1 flex-col overflow-y-auto">
+    <div className="flex flex-1 flex-col overflow-y-auto pb-20 md:pb-0">
       <header className="border-b bg-card/60 backdrop-blur px-8 py-5">
         <div className="flex items-center gap-3">
           <div className="grid h-10 w-10 place-items-center rounded-xl bg-[var(--gradient-brand)] text-primary-foreground">
