@@ -90,6 +90,7 @@ export function InboxProvider({ children }: { children: ReactNode }) {
   const [selectedDealId, setSelectedDealId] = useState<string | null>(initialDeals[0]?.id ?? null);
   const [aiSettings, setAISettings] = useState<AISettings>(DEFAULT_AI_SETTINGS);
   const [account, setAccount] = useState<AccountSettings>(DEFAULT_ACCOUNT_SETTINGS);
+  const [pipelineStages, setPipelineStages] = useState<PipelineStage[]>(DEAL_STAGES);
 
   // Tick every 30s so the "bot paused" countdown re-renders
   const [, setTick] = useState(0);
@@ -299,6 +300,47 @@ export function InboxProvider({ children }: { children: ReactNode }) {
     setAccount(DEFAULT_ACCOUNT_SETTINGS);
   }, []);
 
+  const addPipelineStage = useCallback<InboxState["addPipelineStage"]>((stage) => {
+    const id = stage.id ?? uid();
+    setPipelineStages((prev) => {
+      // Insert before terminal stages (won/lost) when present
+      const terminalIdx = prev.findIndex((s) => s.type === "won" || s.type === "lost");
+      const next: PipelineStage = { id, label: stage.label, accent: stage.accent, type: stage.type ?? "open" };
+      if (terminalIdx === -1) return [...prev, next];
+      return [...prev.slice(0, terminalIdx), next, ...prev.slice(terminalIdx)];
+    });
+    return id;
+  }, []);
+
+  const updatePipelineStage = useCallback<InboxState["updatePipelineStage"]>((id, patch) => {
+    setPipelineStages((prev) => prev.map((s) => (s.id === id ? { ...s, ...patch } : s)));
+  }, []);
+
+  const removePipelineStage = useCallback<InboxState["removePipelineStage"]>((id, fallbackId) => {
+    setPipelineStages((prev) => {
+      if (prev.length <= 2) return prev; // keep at least 2 columns
+      const fallback = fallbackId ?? prev.find((s) => s.id !== id)?.id;
+      if (fallback) {
+        setDeals((ds) => ds.map((d) => (d.stage === id ? { ...d, stage: fallback, updatedAt: Date.now() } : d)));
+      }
+      return prev.filter((s) => s.id !== id);
+    });
+  }, []);
+
+  const reorderPipelineStage = useCallback<InboxState["reorderPipelineStage"]>((id, direction) => {
+    setPipelineStages((prev) => {
+      const idx = prev.findIndex((s) => s.id === id);
+      if (idx === -1) return prev;
+      const target = idx + direction;
+      if (target < 0 || target >= prev.length) return prev;
+      const next = [...prev];
+      [next[idx], next[target]] = [next[target], next[idx]];
+      return next;
+    });
+  }, []);
+
+  const resetPipelineStages = useCallback(() => setPipelineStages(DEAL_STAGES), []);
+
   const value = useMemo<InboxState>(
     () => ({
       contacts,
@@ -333,6 +375,12 @@ export function InboxProvider({ children }: { children: ReactNode }) {
       updateAccount,
       resetAccount,
       deleteAccount,
+      pipelineStages,
+      addPipelineStage,
+      updatePipelineStage,
+      removePipelineStage,
+      reorderPipelineStage,
+      resetPipelineStages,
     }),
     [
       contacts,
@@ -367,6 +415,12 @@ export function InboxProvider({ children }: { children: ReactNode }) {
       updateAccount,
       resetAccount,
       deleteAccount,
+      pipelineStages,
+      addPipelineStage,
+      updatePipelineStage,
+      removePipelineStage,
+      reorderPipelineStage,
+      resetPipelineStages,
     ],
   );
 
