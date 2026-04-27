@@ -1,4 +1,4 @@
-import { Bot, ShieldOff, ShieldCheck, Mail, Phone, Tag, Webhook, Clock } from "lucide-react";
+import { Bot, ShieldOff, ShieldCheck, Mail, Phone, Tag, Webhook, Clock, UserPlus } from "lucide-react";
 import { useInbox } from "@/lib/inbox-store";
 import { ContactAvatar } from "./Avatar";
 import { ChannelBadge } from "./ChannelBadge";
@@ -20,7 +20,23 @@ export function ContactPanel() {
         <ContactAvatar name={contact.name} color={contact.avatarColor} size={72} online />
         <h3 className="mt-3 text-base font-semibold">{contact.name}</h3>
         <div className="mt-1"><ChannelBadge channel={contact.channel} withLabel /></div>
+        {!contact.saved && (
+          <span className="mt-2 inline-flex items-center gap-1 rounded-md bg-warning/15 px-2 py-0.5 text-[11px] font-medium text-warning-foreground">
+            Contacto no guardado
+          </span>
+        )}
       </div>
+
+      {!contact.saved && (
+        <div className="px-6 pb-2">
+          <div className="rounded-lg border border-dashed bg-muted/40 p-3 text-xs">
+            <p className="mb-2 text-muted-foreground">
+              Este número escribió por primera vez y aún no está en tu lista. Guárdalo para añadir nombre, etiquetas y notas.
+            </p>
+            <p className="text-[11px] text-muted-foreground">Usa el botón <strong>Agregar a contactos</strong> en la parte superior del chat.</p>
+          </div>
+        </div>
+      )}
 
       <div className="px-6 pb-5">
         <button
