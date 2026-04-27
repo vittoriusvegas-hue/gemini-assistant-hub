@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Bot, Send, CheckCircle2, Play, Paperclip, Smile, MoreHorizontal, TrendingUp } from "lucide-react";
+import { Bot, Send, CheckCircle2, Play, Paperclip, Smile, MoreHorizontal, TrendingUp, UserPlus } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { useInbox } from "@/lib/inbox-store";
@@ -20,7 +20,7 @@ function formatRemaining(ms: number) {
 }
 
 export function ChatPanel() {
-  const { selectedConversationId, conversations, contacts, messages, sendAgentMessage, resumeBot, resolveConversation, deals, createDeal, pipelineStages, selectDeal } =
+  const { selectedConversationId, conversations, contacts, messages, sendAgentMessage, resumeBot, resolveConversation, deals, createDeal, pipelineStages, selectDeal, saveContact } =
     useInbox();
   const navigate = useNavigate();
   const conv = conversations.find((c) => c.id === selectedConversationId) ?? null;
@@ -32,6 +32,7 @@ export function ChatPanel() {
 
   const [draft, setDraft] = useState("");
   const [showDeal, setShowDeal] = useState(false);
+  const [showSave, setShowSave] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -73,11 +74,26 @@ export function ChatPanel() {
             <div className="flex items-center gap-2">
               <h3 className="text-sm font-semibold">{contact.name}</h3>
               <ChannelBadge channel={contact.channel} />
+              {!contact.saved && (
+                <span className="rounded-md bg-warning/15 px-1.5 py-0.5 text-[10px] font-medium text-warning-foreground">
+                  No guardado
+                </span>
+              )}
             </div>
             <div className="text-xs text-muted-foreground">{contact.phone}</div>
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {!contact.saved && (
+            <button
+              onClick={() => setShowSave(true)}
+              className="inline-flex items-center gap-1.5 rounded-lg border bg-background px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted"
+              title="Agregar este número a tus contactos"
+            >
+              <UserPlus className="h-3.5 w-3.5" />
+              Agregar a contactos
+            </button>
+          )}
           {existingDeal ? (
             <button
               onClick={() => {
@@ -119,6 +135,20 @@ export function ChatPanel() {
           stages={pipelineStages.map((s) => ({ id: s.id, label: s.label }))}
           onClose={() => setShowDeal(false)}
           onSubmit={handleCreateDeal}
+        />
+      )}
+
+      {showSave && (
+        <SaveContactDialog
+          phone={contact.phone}
+          channel={contact.channel}
+          defaultName={contact.name}
+          onClose={() => setShowSave(false)}
+          onSubmit={(patch) => {
+            saveContact(contact.id, patch);
+            setShowSave(false);
+            toast.success("Contacto guardado", { description: `${patch.name} se añadió a tu lista.` });
+          }}
         />
       )}
 
