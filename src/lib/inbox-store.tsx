@@ -31,7 +31,7 @@ interface InboxState {
   /** Simulates an incoming message from a contact (for the demo webhook button) */
   simulateIncoming: (contactId: string, text: string) => void;
   // Contact CRUD
-  addContact: (input: Omit<Contact, "id" | "createdAt" | "blocked" | "tags" | "avatarColor"> & { tags?: string[]; blocked?: boolean; avatarColor?: string }) => string;
+  addContact: (input: Omit<Contact, "id" | "createdAt" | "blocked" | "tags" | "avatarColor" | "saved"> & { tags?: string[]; blocked?: boolean; avatarColor?: string; saved?: boolean }) => string;
   updateContact: (contactId: string, patch: Partial<Pick<Contact, "name" | "phone" | "email" | "channel" | "tags">>) => void;
   deleteContact: (contactId: string) => void;
   addContactTag: (contactId: string, tag: string) => void;
@@ -193,6 +193,7 @@ export function InboxProvider({ children }: { children: ReactNode }) {
       tags: input.tags ?? [],
       blocked: input.blocked ?? false,
       avatarColor: input.avatarColor ?? AVATAR_COLORS[Math.floor(Math.random() * AVATAR_COLORS.length)],
+      saved: input.saved ?? true,
       createdAt: Date.now(),
     };
     setContacts((prev) => [contact, ...prev]);
