@@ -24,6 +24,12 @@ interface InboxState {
   resolveConversation: (conversationId: string) => void;
   /** Simulates an incoming message from a contact (for the demo webhook button) */
   simulateIncoming: (contactId: string, text: string) => void;
+  // Contact CRUD
+  addContact: (input: Omit<Contact, "id" | "createdAt" | "blocked" | "tags" | "avatarColor"> & { tags?: string[]; blocked?: boolean; avatarColor?: string }) => string;
+  updateContact: (contactId: string, patch: Partial<Pick<Contact, "name" | "phone" | "email" | "channel" | "tags">>) => void;
+  deleteContact: (contactId: string) => void;
+  addContactTag: (contactId: string, tag: string) => void;
+  removeContactTag: (contactId: string, tag: string) => void;
   // Sales pipeline
   deals: Deal[];
   selectedDealId: string | null;
@@ -41,6 +47,17 @@ const InboxContext = createContext<InboxState | null>(null);
 function uid() {
   return Math.random().toString(36).slice(2, 10);
 }
+
+const AVATAR_COLORS = [
+  "oklch(0.7 0.18 25)",
+  "oklch(0.65 0.2 145)",
+  "oklch(0.65 0.2 280)",
+  "oklch(0.7 0.18 60)",
+  "oklch(0.65 0.2 200)",
+  "oklch(0.6 0.22 320)",
+  "oklch(0.7 0.16 100)",
+  "oklch(0.55 0.22 15)",
+];
 
 export function InboxProvider({ children }: { children: ReactNode }) {
   const [contacts, setContacts] = useState<Contact[]>(initialContacts);
@@ -140,6 +157,55 @@ export function InboxProvider({ children }: { children: ReactNode }) {
     }
   }, [contacts, conversations, selectedConversationId]);
 
+  const addContact = useCallback<InboxState["addContact"]>((input) => {
+    const id = uid();
+    const contact: Contact = {
+      id,
+      name: input.name,
+      phone: input.phone,
+      email: input.email,
+      channel: input.channel,
+      tags: input.tags ?? [],
+      blocked: input.blocked ?? false,
+      avatarColor: input.avatarColor ?? AVATAR_COLORS[Math.floor(Math.random() * AVATAR_COLORS.length)],
+      createdAt: Date.now(),
+    };
+    setContacts((prev) => [contact, ...prev]);
+    return id;
+  }, []);
+
+  const updateContact = useCallback<InboxState["updateContact"]>((contactId, patch) => {
+    setContacts((prev) => prev.map((c) => (c.id === contactId ? { ...c, ...patch } : c)));
+  }, []);
+
+  const deleteContact = useCallback<InboxState["deleteContact"]>((contactId) => {
+    setContacts((prev) => prev.filter((c) => c.id !== contactId));
+    setConversations((prev) => prev.filter((c) => c.contactId !== contactId));
+    setMessages((prev) => {
+      const removedConvIds = new Set(
+        conversations.filter((c) => c.contactId === contactId).map((c) => c.id),
+      );
+      return prev.filter((m) => !removedConvIds.has(m.conversationId));
+    });
+    setSelectedConversationId((cur) => {
+      if (!cur) return cur;
+      const conv = conversations.find((c) => c.id === cur);
+      return conv && conv.contactId === contactId ? null : cur;
+    });
+  }, [conversations]);
+
+  const addContactTag = useCallback<InboxState["addContactTag"]>((contactId, tag) => {
+    const t = tag.trim();
+    if (!t) return;
+    setContacts((prev) =>
+      prev.map((c) => (c.id === contactId && !c.tags.includes(t) ? { ...c, tags: [...c.tags, t] } : c)),
+    );
+  }, []);
+
+  const removeContactTag = useCallback<InboxState["removeContactTag"]>((contactId, tag) => {
+    setContacts((prev) => prev.map((c) => (c.id === contactId ? { ...c, tags: c.tags.filter((x) => x !== tag) } : c)));
+  }, []);
+
   const selectDeal = useCallback((id: string | null) => setSelectedDealId(id), []);
 
   const moveDeal = useCallback((dealId: string, stage: DealStage) => {
@@ -208,6 +274,11 @@ export function InboxProvider({ children }: { children: ReactNode }) {
       markAsRead,
       resolveConversation,
       simulateIncoming,
+      addContact,
+      updateContact,
+      deleteContact,
+      addContactTag,
+      removeContactTag,
       deals,
       selectedDealId,
       selectDeal,
@@ -230,6 +301,11 @@ export function InboxProvider({ children }: { children: ReactNode }) {
       markAsRead,
       resolveConversation,
       simulateIncoming,
+      addContact,
+      updateContact,
+      deleteContact,
+      addContactTag,
+      removeContactTag,
       deals,
       selectedDealId,
       selectDeal,

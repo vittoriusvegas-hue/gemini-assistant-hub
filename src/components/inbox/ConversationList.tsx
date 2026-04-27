@@ -83,7 +83,7 @@ export function ConversationList() {
                       <span className="truncate text-sm font-semibold">{contact.name}</span>
                       <ChannelBadge channel={contact.channel} />
                     </div>
-                    <span className="shrink-0 text-[11px] text-muted-foreground">
+                    <span className="shrink-0 text-[11px] text-muted-foreground" suppressHydrationWarning>
                       {formatDistanceToNowStrict(conv.lastMessageAt, { locale: es, addSuffix: false })}
                     </span>
                   </div>
