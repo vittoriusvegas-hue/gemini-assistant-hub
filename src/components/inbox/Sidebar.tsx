@@ -3,20 +3,22 @@ import { Link, useLocation } from "@tanstack/react-router";
 import { Bot, Inbox, Users, Settings, BarChart3, Sparkles, Trello, LogOut, ShieldCheck, Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-store";
+import { useUsers, type FeatureKey } from "@/lib/users-store";
 import { toast } from "sonner";
 
-const items = [
-  { to: "/", label: "Bandeja", icon: Inbox },
-  { to: "/sales", label: "Ventas", icon: Trello },
-  { to: "/contacts", label: "Contactos", icon: Users },
-  { to: "/bot", label: "Bot IA", icon: Bot },
-  { to: "/analytics", label: "Métricas", icon: BarChart3 },
-  { to: "/settings", label: "Ajustes", icon: Settings },
-] as const;
+const items: { to: string; label: string; icon: typeof Inbox; feature: FeatureKey }[] = [
+  { to: "/", label: "Bandeja", icon: Inbox, feature: "inbox" },
+  { to: "/sales", label: "Ventas", icon: Trello, feature: "sales" },
+  { to: "/contacts", label: "Contactos", icon: Users, feature: "contacts" },
+  { to: "/bot", label: "Bot IA", icon: Bot, feature: "bot" },
+  { to: "/analytics", label: "Métricas", icon: BarChart3, feature: "analytics" },
+  { to: "/settings", label: "Ajustes", icon: Settings, feature: "settings" },
+];
 
 export function Sidebar() {
   const { pathname } = useLocation();
   const { user, logout, setRole, isAdmin } = useAuth();
+  const { can } = useUsers();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -43,7 +45,7 @@ export function Sidebar() {
         <Sparkles className="h-5 w-5" />
       </div>
       <nav className="mt-2 flex flex-col items-center gap-1">
-        {items.map(({ to, label, icon: Icon }) => {
+        {items.filter((it) => can(it.feature)).map(({ to, label, icon: Icon }) => {
           const active = to === "/" ? pathname === "/" : pathname.startsWith(to);
           return (
             <Link
