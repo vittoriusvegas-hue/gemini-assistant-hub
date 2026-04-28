@@ -363,9 +363,20 @@ function DealDetail({ deal, onClose, isAdmin, onDelete }: { deal: Deal; onClose:
               </div>
             )}
           </div>
-          <button onClick={onClose} className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground hover:bg-muted">
-            <X className="h-4 w-4" />
-          </button>
+          <div className="flex items-center gap-1">
+            {isAdmin && (
+              <button
+                onClick={onDelete}
+                title="Eliminar oportunidad"
+                className="inline-flex h-8 items-center gap-1 rounded-lg border border-destructive/30 bg-destructive/5 px-2 text-xs font-medium text-destructive hover:bg-destructive/10"
+              >
+                <Trash2 className="h-3.5 w-3.5" /> Eliminar
+              </button>
+            )}
+            <button onClick={onClose} className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground hover:bg-muted">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
         </div>
 
         {/* Stats */}
@@ -517,9 +528,20 @@ function DealDetail({ deal, onClose, isAdmin, onDelete }: { deal: Deal; onClose:
                 <div key={c.id} className="rounded-lg border bg-card p-3">
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-xs font-semibold">{c.author}</span>
-                    <span className="text-[10px] text-muted-foreground" suppressHydrationWarning>
-                      {formatDistanceToNow(c.createdAt, { addSuffix: true, locale: es })}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] text-muted-foreground" suppressHydrationWarning>
+                        {formatDistanceToNow(c.createdAt, { addSuffix: true, locale: es })}
+                      </span>
+                      {isAdmin && (
+                        <button
+                          onClick={() => deleteDealComment(deal.id, c.id)}
+                          title="Eliminar comentario"
+                          className="grid h-6 w-6 place-items-center rounded-md text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </button>
+                      )}
+                    </div>
                   </div>
                   <p className="mt-1 text-sm leading-snug text-foreground">{c.text}</p>
                 </div>
