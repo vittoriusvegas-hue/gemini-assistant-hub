@@ -28,6 +28,9 @@ interface InboxState {
   resumeBot: (conversationId: string) => void;
   markAsRead: (conversationId: string) => void;
   resolveConversation: (conversationId: string) => void;
+  deleteConversation: (conversationId: string) => void;
+  toggleUnread: (conversationId: string) => void;
+  toggleBotPause: (conversationId: string) => void;
   /** Simulates an incoming message from a contact (for the demo webhook button) */
   simulateIncoming: (contactId: string, text: string) => void;
   // Contact CRUD
