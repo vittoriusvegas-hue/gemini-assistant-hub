@@ -151,6 +151,28 @@ export function InboxProvider({ children }: { children: ReactNode }) {
     );
   }, []);
 
+  const deleteConversation = useCallback((conversationId: string) => {
+    setConversations((prev) => prev.filter((c) => c.id !== conversationId));
+    setMessages((prev) => prev.filter((m) => m.conversationId !== conversationId));
+    setSelectedConversationId((cur) => (cur === conversationId ? null : cur));
+  }, []);
+
+  const toggleUnread = useCallback((conversationId: string) => {
+    setConversations((prev) =>
+      prev.map((c) => (c.id === conversationId ? { ...c, unread: c.unread > 0 ? 0 : 1 } : c)),
+    );
+  }, []);
+
+  const toggleBotPause = useCallback((conversationId: string) => {
+    setConversations((prev) =>
+      prev.map((c) => {
+        if (c.id !== conversationId) return c;
+        const isPaused = c.botPausedUntil && c.botPausedUntil > Date.now();
+        return { ...c, botPausedUntil: isPaused ? null : Date.now() + BOT_PAUSE_MS };
+      }),
+    );
+  }, []);
+
   const simulateIncoming = useCallback((contactId: string, text: string) => {
     const conversation = conversations.find((c) => c.contactId === contactId);
     const contact = contacts.find((c) => c.id === contactId);
@@ -391,6 +413,9 @@ export function InboxProvider({ children }: { children: ReactNode }) {
       resumeBot,
       markAsRead,
       resolveConversation,
+      deleteConversation,
+      toggleUnread,
+      toggleBotPause,
       simulateIncoming,
       addContact,
       updateContact,
@@ -434,6 +459,9 @@ export function InboxProvider({ children }: { children: ReactNode }) {
       resumeBot,
       markAsRead,
       resolveConversation,
+      deleteConversation,
+      toggleUnread,
+      toggleBotPause,
       simulateIncoming,
       addContact,
       updateContact,
