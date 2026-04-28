@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Bot, Send, CheckCircle2, Play, Paperclip, Smile, TrendingUp, UserPlus, ArrowLeft, Pause, Trash2, Ban, ShieldOff, MailOpen, Mail, RotateCcw, Copy } from "lucide-react";
+import { Bot, Send, CheckCircle2, Play, Paperclip, Smile, TrendingUp, UserPlus, ArrowLeft, Pause, Trash2, Ban, ShieldOff, MailOpen, Mail, Copy } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { useInbox } from "@/lib/inbox-store";
