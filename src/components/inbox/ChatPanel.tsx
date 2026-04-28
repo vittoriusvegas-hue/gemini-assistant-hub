@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Bot, Send, CheckCircle2, Play, Paperclip, Smile, MoreHorizontal, TrendingUp, UserPlus, ArrowLeft } from "lucide-react";
+import { Bot, Send, CheckCircle2, Play, Paperclip, Smile, TrendingUp, UserPlus, ArrowLeft, Pause, Trash2, Ban, ShieldOff, MailOpen, Mail, RotateCcw, Copy } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { useInbox } from "@/lib/inbox-store";
@@ -8,6 +8,8 @@ import { ChannelBadge } from "./ChannelBadge";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { MoreMenu, type MenuAction } from "./MoreMenu";
+import { useAuth } from "@/lib/auth-store";
 
 function formatRemaining(ms: number) {
   const m = Math.max(0, Math.ceil(ms / 60000));
@@ -20,8 +22,13 @@ function formatRemaining(ms: number) {
 }
 
 export function ChatPanel() {
-  const { selectedConversationId, conversations, contacts, messages, sendAgentMessage, resumeBot, resolveConversation, deals, createDeal, pipelineStages, selectDeal, saveContact, selectConversation } =
-    useInbox();
+  const {
+    selectedConversationId, conversations, contacts, messages, sendAgentMessage,
+    resumeBot, resolveConversation, deals, createDeal, pipelineStages, selectDeal,
+    saveContact, selectConversation, deleteConversation, toggleUnread, toggleBotPause,
+    toggleBlockContact,
+  } = useInbox();
+  const { isAdmin } = useAuth();
   const navigate = useNavigate();
   const conv = conversations.find((c) => c.id === selectedConversationId) ?? null;
   const contact = conv ? contacts.find((c) => c.id === conv.contactId) ?? null : null;
@@ -50,6 +57,71 @@ export function ChatPanel() {
   const paused = conv.botPausedUntil && conv.botPausedUntil > Date.now();
   const remaining = paused ? conv.botPausedUntil! - Date.now() : 0;
   const existingDeal = deals.find((d) => d.contactId === contact.id);
+
+  const lastText = thread[thread.length - 1]?.text ?? "";
+
+  const moreActions: MenuAction[] = [
+    {
+      label: conv.status === "open" ? "Marcar como resuelta" : "Reabrir conversación",
+      icon: CheckCircle2,
+      onClick: () => {
+        resolveConversation(conv.id);
+        toast.success(conv.status === "open" ? "Conversación resuelta" : "Conversación reabierta");
+      },
+    },
+    {
+      label: conv.unread > 0 ? "Marcar como leída" : "Marcar como no leída",
+      icon: conv.unread > 0 ? MailOpen : Mail,
+      onClick: () => toggleUnread(conv.id),
+    },
+    {
+      label: paused ? "Reactivar bot ahora" : "Pausar bot 30 min",
+      icon: paused ? Play : Pause,
+      onClick: () => {
+        if (paused) {
+          resumeBot(conv.id);
+          toast.success("Bot reactivado");
+        } else {
+          toggleBotPause(conv.id);
+          toast("Bot pausado por 30 min");
+        }
+      },
+      divider: true,
+    },
+    {
+      label: "Copiar último mensaje",
+      icon: Copy,
+      onClick: () => {
+        if (!lastText) return;
+        navigator.clipboard?.writeText(lastText).then(
+          () => toast.success("Mensaje copiado"),
+          () => toast.error("No se pudo copiar"),
+        );
+      },
+      disabled: !lastText,
+    },
+    {
+      label: contact.blocked ? "Desbloquear contacto" : "Bloquear contacto",
+      icon: contact.blocked ? ShieldOff : Ban,
+      onClick: () => {
+        toggleBlockContact(contact.id);
+        toast(contact.blocked ? "Contacto desbloqueado" : "Contacto bloqueado");
+      },
+      destructive: !contact.blocked,
+      divider: true,
+    },
+    {
+      label: "Eliminar conversación",
+      icon: Trash2,
+      onClick: () => {
+        if (typeof window !== "undefined" && !window.confirm("¿Eliminar esta conversación? Esta acción no se puede deshacer.")) return;
+        deleteConversation(conv.id);
+        toast.success("Conversación eliminada");
+      },
+      destructive: true,
+      hidden: !isAdmin,
+    },
+  ];
 
   const onSend = () => {
     if (!draft.trim()) return;
@@ -130,9 +202,7 @@ export function ChatPanel() {
             <CheckCircle2 className="h-3.5 w-3.5" />
             {conv.status === "open" ? "Marcar resuelta" : "Reabrir"}
           </button>
-          <button className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-muted-foreground hover:bg-muted">
-            <MoreHorizontal className="h-4 w-4" />
-          </button>
+          <MoreMenu actions={moreActions} align="right" />
         </div>
       </div>
 
