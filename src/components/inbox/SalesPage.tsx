@@ -626,6 +626,47 @@ function Empty({ children }: { children: React.ReactNode }) {
   );
 }
 
+function ConfirmDialog({
+  title,
+  message,
+  confirmLabel = "Confirmar",
+  onConfirm,
+  onCancel,
+}: {
+  title: string;
+  message: string;
+  confirmLabel?: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-[60] grid place-items-center bg-black/50 p-4" onClick={onCancel}>
+      <div onClick={(e) => e.stopPropagation()} className="w-full max-w-sm rounded-2xl border bg-card p-5 shadow-2xl">
+        <div className="flex items-start gap-3">
+          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-destructive/10 text-destructive">
+            <Trash2 className="h-5 w-5" />
+          </div>
+          <div className="min-w-0">
+            <h3 className="text-base font-semibold">{title}</h3>
+            <p className="mt-1 text-sm text-muted-foreground">{message}</p>
+          </div>
+        </div>
+        <div className="mt-5 flex justify-end gap-2">
+          <button onClick={onCancel} className="rounded-lg border px-3 py-1.5 text-sm hover:bg-muted">
+            Cancelar
+          </button>
+          <button
+            onClick={onConfirm}
+            className="rounded-lg bg-destructive px-3 py-1.5 text-sm font-medium text-destructive-foreground hover:opacity-95"
+          >
+            {confirmLabel}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function AttachmentCard({ attachment, onRemove }: { attachment: Attachment; onRemove: () => void }) {
   const Icon = attachmentIcon(attachment.kind);
   const tint = attachmentTint(attachment.kind);
