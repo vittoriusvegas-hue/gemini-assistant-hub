@@ -27,6 +27,8 @@ import { useInbox } from "@/lib/inbox-store";
 import { type Attachment, type Deal, type DealStage, type PipelineStage } from "@/lib/inbox-types";
 import { ContactAvatar } from "./Avatar";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/lib/auth-store";
+import { toast } from "sonner";
 
 function fmtMoney(amount: number, currency: string) {
   try {
@@ -67,10 +69,12 @@ function attachmentTint(kind: Attachment["kind"]) {
 }
 
 export function SalesPage() {
-  const { deals, contacts, selectedDealId, selectDeal, moveDeal, createDeal, pipelineStages } = useInbox();
+  const { deals, contacts, selectedDealId, selectDeal, moveDeal, createDeal, pipelineStages, deleteDeal } = useInbox();
+  const { isAdmin } = useAuth();
   const [query, setQuery] = useState("");
   const [showNew, setShowNew] = useState(false);
   const [showCustomize, setShowCustomize] = useState(false);
+  const [confirmDeleteDealId, setConfirmDeleteDealId] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -149,12 +153,20 @@ export function SalesPage() {
               className="h-9 w-full rounded-lg border bg-background pl-9 pr-3 text-sm outline-none focus:ring-2 focus:ring-ring/40 sm:w-72"
             />
           </div>
-          <button
-            onClick={() => setShowCustomize(true)}
-            className="inline-flex h-9 items-center gap-1.5 rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted md:text-sm"
-          >
-            <Settings2 className="h-4 w-4" /> <span className="hidden sm:inline">Personalizar embudo</span>
-          </button>
+          {isAdmin && (
+            <button
+              onClick={() => setShowCustomize(true)}
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted md:text-sm"
+              title="Solo administradores"
+            >
+              <Settings2 className="h-4 w-4" /> <span className="hidden sm:inline">Personalizar embudo</span>
+            </button>
+          )}
+          {isAdmin && (
+            <span className="hidden md:inline-flex items-center gap-1 rounded-full border border-primary/30 bg-primary-soft px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
+              Admin
+            </span>
+          )}
           <button
             onClick={() => setShowNew(true)}
             className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[var(--gradient-brand)] px-3 text-xs font-medium text-primary-foreground shadow-[var(--shadow-pop)] hover:opacity-95 md:text-sm"
@@ -204,7 +216,21 @@ export function SalesPage() {
                       >
                         <div className="flex items-start justify-between gap-2">
                           <h4 className="line-clamp-2 text-sm font-semibold leading-snug">{deal.title}</h4>
-                          <GripVertical className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground/60 opacity-0 group-hover:opacity-100" />
+                          <div className="flex items-center gap-1">
+                            {isAdmin && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setConfirmDeleteDealId(deal.id);
+                                }}
+                                title="Eliminar oportunidad"
+                                className="grid h-6 w-6 place-items-center rounded-md text-muted-foreground/70 opacity-0 transition hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            )}
+                            <GripVertical className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground/60 opacity-0 group-hover:opacity-100" />
+                          </div>
                         </div>
                         {contact && (
                           <div className="mt-2 flex items-center gap-2">
@@ -248,15 +274,35 @@ export function SalesPage() {
       </div>
 
       {/* Detail drawer */}
-      {selected && <DealDetail deal={selected} onClose={() => selectDeal(null)} />}
+      {selected && (
+        <DealDetail
+          deal={selected}
+          onClose={() => selectDeal(null)}
+          isAdmin={isAdmin}
+          onDelete={() => setConfirmDeleteDealId(selected.id)}
+        />
+      )}
       {showNew && <NewDealDialog onClose={() => setShowNew(false)} onCreate={(input) => { createDeal(input); setShowNew(false); }} />}
-      {showCustomize && <CustomizePipelineDialog onClose={() => setShowCustomize(false)} />}
+      {showCustomize && isAdmin && <CustomizePipelineDialog onClose={() => setShowCustomize(false)} />}
+      {confirmDeleteDealId && (
+        <ConfirmDialog
+          title="Eliminar oportunidad"
+          message="Esta acción no se puede deshacer. Se borrarán los archivos de referencia y los comentarios asociados."
+          confirmLabel="Eliminar"
+          onCancel={() => setConfirmDeleteDealId(null)}
+          onConfirm={() => {
+            deleteDeal(confirmDeleteDealId);
+            setConfirmDeleteDealId(null);
+            toast.success("Oportunidad eliminada");
+          }}
+        />
+      )}
     </div>
   );
 }
 
-function DealDetail({ deal, onClose }: { deal: Deal; onClose: () => void }) {
-  const { contacts, messages, addDealAttachment, removeDealAttachment, addDealComment, updateDeal, moveDeal, pipelineStages } = useInbox();
+function DealDetail({ deal, onClose, isAdmin, onDelete }: { deal: Deal; onClose: () => void; isAdmin: boolean; onDelete: () => void }) {
+  const { contacts, messages, addDealAttachment, removeDealAttachment, addDealComment, updateDeal, moveDeal, pipelineStages, deleteDealComment } = useInbox();
   const contact = contacts.find((c) => c.id === deal.contactId);
   const chatFiles = useMemo(
     () => messages.filter((m) => m.conversationId === deal.conversationId && /\.(png|jpg|jpeg|pdf|docx?|xlsx?)$/i.test(m.text)),
