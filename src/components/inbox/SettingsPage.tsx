@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Bot, RotateCcw, Save, Sparkles, Timer, User, Bell, Plug } from "lucide-react";
+import { Bot, RotateCcw, Save, Sparkles, Timer, User, Bell, Plug, Users as UsersIcon } from "lucide-react";
 import { useInbox } from "@/lib/inbox-store";
 import type { AISettings, GeminiModel } from "@/lib/inbox-types";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,8 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { AccountSettings } from "./AccountSettings";
 import { WhatsAppConnect } from "./WhatsAppConnect";
+import { UsersAdminPage } from "./UsersAdminPage";
+import { useAuth } from "@/lib/auth-store";
 
 const MODELS: { id: GeminiModel; label: string; hint: string }[] = [
   { id: "gemini-2.5-flash-lite", label: "Gemini 2.5 Flash Lite", hint: "Más rápido y económico" },
@@ -31,6 +33,7 @@ const MODELS: { id: GeminiModel; label: string; hint: string }[] = [
 
 export function SettingsPage() {
   const { aiSettings, updateAISettings, resetAISettings } = useInbox();
+  const { isAdmin } = useAuth();
   const [draft, setDraft] = useState<AISettings>(aiSettings);
 
   const dirty = JSON.stringify(draft) !== JSON.stringify(aiSettings);
@@ -65,11 +68,14 @@ export function SettingsPage() {
         </header>
 
         <Tabs defaultValue="ai" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className={cn("grid w-full", isAdmin ? "grid-cols-5" : "grid-cols-4")}>
             <TabsTrigger value="ai" className="gap-2"><Bot className="h-4 w-4" />IA</TabsTrigger>
             <TabsTrigger value="account" className="gap-2"><User className="h-4 w-4" />Cuenta</TabsTrigger>
             <TabsTrigger value="notifications" className="gap-2"><Bell className="h-4 w-4" />Avisos</TabsTrigger>
             <TabsTrigger value="integrations" className="gap-2"><Plug className="h-4 w-4" />Canales</TabsTrigger>
+            {isAdmin && (
+              <TabsTrigger value="team" className="gap-2"><UsersIcon className="h-4 w-4" />Equipo</TabsTrigger>
+            )}
           </TabsList>
 
           {/* AI TAB */}
@@ -248,6 +254,12 @@ export function SettingsPage() {
               ))}
             </section>
           </TabsContent>
+
+          {isAdmin && (
+            <TabsContent value="team" className="mt-6">
+              <UsersAdminPage />
+            </TabsContent>
+          )}
         </Tabs>
       </div>
     </main>
