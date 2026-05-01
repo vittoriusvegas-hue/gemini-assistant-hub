@@ -139,6 +139,27 @@ export function InboxProvider({ children }: { children: ReactNode }) {
     );
   }, []);
 
+  const sendAgentReply = useCallback((conversationId: string, text: string, replyToId?: string | null) => {
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    const newMsg: Message = {
+      id: uid(),
+      conversationId,
+      sender: "agent",
+      text: trimmed,
+      createdAt: Date.now(),
+      replyToId: replyToId ?? undefined,
+    };
+    setMessages((prev) => [...prev, newMsg]);
+    setConversations((prev) =>
+      prev.map((c) =>
+        c.id === conversationId
+          ? { ...c, lastMessageAt: newMsg.createdAt, botPausedUntil: Date.now() + BOT_PAUSE_MS, unread: 0 }
+          : c,
+      ),
+    );
+  }, []);
+
   const toggleBlockContact = useCallback((contactId: string) => {
     setContacts((prev) => prev.map((c) => (c.id === contactId ? { ...c, blocked: !c.blocked } : c)));
   }, []);
@@ -411,6 +432,7 @@ export function InboxProvider({ children }: { children: ReactNode }) {
       selectedConversationId,
       selectConversation,
       sendAgentMessage,
+      sendAgentReply,
       toggleBlockContact,
       resumeBot,
       markAsRead,
