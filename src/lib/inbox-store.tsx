@@ -479,6 +479,7 @@ export function InboxProvider({ children }: { children: ReactNode }) {
       selectedConversationId,
       selectConversation,
       sendAgentMessage,
+      sendAgentReply,
       toggleBlockContact,
       resumeBot,
       markAsRead,
