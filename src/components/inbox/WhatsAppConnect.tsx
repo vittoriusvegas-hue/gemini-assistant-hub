@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Check, Loader2, QrCode, RefreshCw, Smartphone, Wifi, WifiOff } from "lucide-react";
+import { Check, Loader2, QrCode, RefreshCw, Smartphone, Wifi, WifiOff, LogOut, Phone, User as UserIcon, Calendar, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -25,8 +25,17 @@ interface SessionResp {
 
 const POLL_MS = 1500;
 
+interface ActiveSession {
+  phone: string;
+  name?: string;
+  avatarUrl?: string;
+  at: number;
+}
+
 export function WhatsAppConnect() {
   const [open, setOpen] = useState(false);
+  const [sessionOpen, setSessionOpen] = useState(false);
+  const [confirmLogout, setConfirmLogout] = useState(false);
   const [loading, setLoading] = useState(false);
   const [qr, setQr] = useState<string | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -37,7 +46,7 @@ export function WhatsAppConnect() {
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Persistencia ligera del estado de conexión en demo
-  const [connected, setConnected] = useState<{ phone: string; at: number } | null>(() => {
+  const [connected, setConnected] = useState<ActiveSession | null>(() => {
     if (typeof window === "undefined") return null;
     try {
       const raw = localStorage.getItem("wa-connection");
@@ -61,6 +70,19 @@ export function WhatsAppConnect() {
   };
 
   useEffect(() => () => stopPolling(), []);
+
+  // Genera datos sintéticos del perfil cuando se conecta una nueva sesión
+  const buildProfile = (phoneStr: string): ActiveSession => {
+    const sampleNames = ["María González", "Carlos Ruiz", "Equipo Pulse", "Laura Ramírez", "Tienda Nova"];
+    const name = sampleNames[Math.floor(Math.random() * sampleNames.length)];
+    const seed = encodeURIComponent(phoneStr || name);
+    return {
+      phone: phoneStr || "+00 000 000 000",
+      name,
+      avatarUrl: `https://api.dicebear.com/7.x/avataaars/svg?seed=${seed}&backgroundType=gradientLinear`,
+      at: Date.now(),
+    };
+  };
 
   const requestQr = async () => {
     setLoading(true);
@@ -98,7 +120,8 @@ export function WhatsAppConnect() {
         if (data.status === "connected") {
           stopPolling();
           const at = data.connectedAt ?? Date.now();
-          setConnected({ phone: data.phone ?? "", at });
+          const profile = buildProfile(data.phone ?? "");
+          setConnected({ ...profile, at });
           toast.success("WhatsApp conectado", {
             description: data.phone ? `Vinculado a ${data.phone}` : "La conexión se realizó correctamente.",
           });
@@ -130,43 +153,175 @@ export function WhatsAppConnect() {
 
   const disconnect = () => {
     setConnected(null);
-    toast("WhatsApp desconectado");
+    setConfirmLogout(false);
+    setSessionOpen(false);
+    toast("Sesión de WhatsApp cerrada");
+  };
+
+  const formatDate = (ts: number) => {
+    try {
+      return new Date(ts).toLocaleString("es", { dateStyle: "medium", timeStyle: "short" });
+    } catch {
+      return new Date(ts).toLocaleString();
+    }
   };
 
   return (
     <>
-      <div className="flex items-center justify-between rounded-lg border p-3">
-        <div className="flex items-center gap-3">
-          <div className="grid h-9 w-9 place-items-center rounded-lg bg-emerald-500/10 text-emerald-600">
-            <Smartphone className="h-4 w-4" />
+      {connected ? (
+        <button
+          onClick={() => setSessionOpen(true)}
+          className="group flex w-full items-center justify-between gap-3 rounded-lg border bg-emerald-500/[0.04] p-3 text-left transition hover:bg-emerald-500/[0.08]"
+          title="Ver detalles de la sesión activa"
+        >
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="relative">
+              {connected.avatarUrl ? (
+                <img
+                  src={connected.avatarUrl}
+                  alt={connected.name ?? "Perfil de WhatsApp"}
+                  className="h-10 w-10 rounded-full border border-emerald-500/30 bg-white object-cover"
+                />
+              ) : (
+                <div className="grid h-10 w-10 place-items-center rounded-full bg-emerald-500/15 text-emerald-700">
+                  <Smartphone className="h-4 w-4" />
+                </div>
+              )}
+              <span className="absolute -bottom-0.5 -right-0.5 grid h-4 w-4 place-items-center rounded-full border-2 border-background bg-emerald-500">
+                <Check className="h-2.5 w-2.5 text-white" />
+              </span>
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <p className="truncate text-sm font-semibold">WhatsApp Business</p>
+                <Badge className="h-5 gap-1 bg-emerald-500/15 px-1.5 text-[10px] text-emerald-700 hover:bg-emerald-500/15">
+                  <Wifi className="h-2.5 w-2.5" /> Sesión activa
+                </Badge>
+              </div>
+              <p className="truncate text-xs text-muted-foreground">
+                {connected.name ? `${connected.name} · ` : ""}
+                {connected.phone || "Vinculado"}
+              </p>
+            </div>
           </div>
-          <div>
-            <p className="text-sm font-medium">WhatsApp Business</p>
-            <p className="text-xs text-muted-foreground">
-              {connected
-                ? `Conectado${connected.phone ? ` · ${connected.phone}` : ""}`
-                : "Vincula tu número escaneando un código QR."}
-            </p>
+          <span className="shrink-0 text-xs font-medium text-primary opacity-0 transition group-hover:opacity-100">
+            Ver detalles →
+          </span>
+        </button>
+      ) : (
+        <div className="flex items-center justify-between rounded-lg border p-3">
+          <div className="flex items-center gap-3">
+            <div className="grid h-9 w-9 place-items-center rounded-lg bg-emerald-500/10 text-emerald-600">
+              <Smartphone className="h-4 w-4" />
+            </div>
+            <div>
+              <p className="text-sm font-medium">WhatsApp Business</p>
+              <p className="text-xs text-muted-foreground">Vincula tu número escaneando un código QR.</p>
+            </div>
           </div>
+          <Button size="sm" onClick={() => setOpen(true)} className="gap-1">
+            <QrCode className="h-3 w-3" /> Conectar
+          </Button>
         </div>
+      )}
 
-        <div className="flex items-center gap-2">
-          {connected ? (
-            <>
-              <Badge className="gap-1 bg-emerald-500/15 text-emerald-700 hover:bg-emerald-500/15">
-                <Wifi className="h-3 w-3" /> Conectado
-              </Badge>
-              <Button size="sm" variant="ghost" onClick={disconnect} className="gap-1">
-                <WifiOff className="h-3 w-3" /> Desconectar
-              </Button>
-            </>
-          ) : (
-            <Button size="sm" onClick={() => setOpen(true)} className="gap-1">
-              <QrCode className="h-3 w-3" /> Conectar
-            </Button>
+      {/* MODAL: Sesión activa */}
+      <Dialog open={sessionOpen} onOpenChange={setSessionOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ShieldCheck className="h-4 w-4 text-emerald-600" />
+              Sesión activa de WhatsApp
+            </DialogTitle>
+            <DialogDescription>
+              Datos básicos del número vinculado a este espacio de trabajo.
+            </DialogDescription>
+          </DialogHeader>
+
+          {connected && (
+            <div className="space-y-4 py-2">
+              <div className="flex items-center gap-4 rounded-xl border bg-muted/30 p-4">
+                <div className="relative">
+                  {connected.avatarUrl ? (
+                    <img
+                      src={connected.avatarUrl}
+                      alt={connected.name ?? "Perfil"}
+                      className="h-16 w-16 rounded-full border-2 border-emerald-500/40 bg-white object-cover"
+                    />
+                  ) : (
+                    <div className="grid h-16 w-16 place-items-center rounded-full bg-emerald-500/15 text-emerald-700">
+                      <UserIcon className="h-7 w-7" />
+                    </div>
+                  )}
+                  <span className="absolute -bottom-0.5 -right-0.5 grid h-5 w-5 place-items-center rounded-full border-2 border-background bg-emerald-500">
+                    <Check className="h-3 w-3 text-white" />
+                  </span>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-base font-semibold">{connected.name ?? "Perfil de WhatsApp"}</p>
+                  <p className="truncate text-sm text-muted-foreground">{connected.phone}</p>
+                  <Badge className="mt-1 h-5 gap-1 bg-emerald-500/15 px-1.5 text-[10px] text-emerald-700 hover:bg-emerald-500/15">
+                    <Wifi className="h-2.5 w-2.5" /> En línea
+                  </Badge>
+                </div>
+              </div>
+
+              <div className="space-y-2 rounded-xl border p-3 text-sm">
+                <div className="flex items-center gap-3">
+                  <Phone className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs text-muted-foreground">Número de teléfono</p>
+                    <p className="truncate font-medium">{connected.phone || "—"}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <UserIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs text-muted-foreground">Nombre del perfil</p>
+                    <p className="truncate font-medium">{connected.name ?? "—"}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Calendar className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs text-muted-foreground">Conectado desde</p>
+                    <p className="truncate font-medium">{formatDate(connected.at)}</p>
+                  </div>
+                </div>
+              </div>
+
+              {confirmLogout && (
+                <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm">
+                  <p className="font-medium text-destructive">¿Cerrar sesión de WhatsApp?</p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Dejarás de recibir y enviar mensajes desde este número hasta que vuelvas a vincularlo escaneando el QR.
+                  </p>
+                </div>
+              )}
+            </div>
           )}
-        </div>
-      </div>
+
+          <DialogFooter className="sm:justify-between">
+            <Button variant="ghost" onClick={() => { setConfirmLogout(false); setSessionOpen(false); }}>
+              Cerrar
+            </Button>
+            {confirmLogout ? (
+              <div className="flex gap-2">
+                <Button variant="ghost" onClick={() => setConfirmLogout(false)}>
+                  Cancelar
+                </Button>
+                <Button variant="destructive" onClick={disconnect} className="gap-1">
+                  <LogOut className="h-3.5 w-3.5" /> Sí, cerrar sesión
+                </Button>
+              </div>
+            ) : (
+              <Button variant="destructive" onClick={() => setConfirmLogout(true)} className="gap-1">
+                <LogOut className="h-3.5 w-3.5" /> Cerrar sesión
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-sm">
