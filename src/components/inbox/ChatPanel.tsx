@@ -279,31 +279,87 @@ export function ChatPanel() {
           {thread.map((m) => {
             const me = m.sender === "agent";
             const bot = m.sender === "bot";
+            const quoted = m.replyToId ? thread.find((x) => x.id === m.replyToId) : null;
+            const quotedAuthor = quoted
+              ? quoted.sender === "agent"
+                ? "Tú"
+                : quoted.sender === "bot"
+                  ? "Bot Gemini"
+                  : contact.name
+              : "";
             return (
-              <div key={m.id} className={cn("flex w-full", me ? "justify-end" : "justify-start")}>
-                <div className={cn("flex max-w-[78%] flex-col", me ? "items-end" : "items-start")}>
-                  {bot && (
-                    <div className="mb-1 inline-flex items-center gap-1 text-[11px] font-medium text-primary">
-                      <Bot className="h-3 w-3" /> Bot Gemini
-                    </div>
-                  )}
-                  <div
-                    className={cn(
-                      "rounded-2xl px-4 py-2 text-sm shadow-[var(--shadow-soft)]",
-                      me
-                        ? "rounded-br-sm bg-[var(--gradient-bubble-me)] text-primary-foreground"
-                        : bot
-                          ? "rounded-bl-sm border border-primary/15 bg-primary-soft text-foreground"
-                          : "rounded-bl-sm bg-card text-foreground border",
+              <SwipeToReply key={m.id} side={me ? "right" : "left"} onReply={() => startReply(m.id)}>
+                <div className={cn("flex w-full", me ? "justify-end" : "justify-start")}>
+                  <div className={cn("group flex max-w-[78%] flex-col", me ? "items-end" : "items-start")}>
+                    {bot && (
+                      <div className="mb-1 inline-flex items-center gap-1 text-[11px] font-medium text-primary">
+                        <Bot className="h-3 w-3" /> Bot Gemini
+                      </div>
                     )}
-                  >
-                    {m.text}
+                    <div className="relative">
+                      <div
+                        className={cn(
+                          "rounded-2xl px-3 py-2 text-sm shadow-[var(--shadow-soft)]",
+                          m.audio ? "min-w-[240px]" : "px-4",
+                          me
+                            ? "rounded-br-sm bg-[var(--gradient-bubble-me)] text-primary-foreground"
+                            : bot
+                              ? "rounded-bl-sm border border-primary/15 bg-primary-soft text-foreground"
+                              : "rounded-bl-sm bg-card text-foreground border",
+                        )}
+                      >
+                        {quoted && (
+                          <button
+                            onClick={() => {
+                              const el = document.getElementById(`msg-${quoted.id}`);
+                              el?.scrollIntoView({ behavior: "smooth", block: "center" });
+                              el?.classList.add("ring-2", "ring-primary/50");
+                              setTimeout(() => el?.classList.remove("ring-2", "ring-primary/50"), 1200);
+                            }}
+                            className={cn(
+                              "mb-1.5 block w-full rounded-md border-l-2 px-2 py-1 text-left text-xs",
+                              me
+                                ? "border-white/70 bg-white/15 text-primary-foreground/90"
+                                : "border-primary bg-primary/10 text-foreground/80",
+                            )}
+                          >
+                            <div className={cn("text-[10px] font-semibold", me ? "text-white" : "text-primary")}>
+                              {quotedAuthor}
+                            </div>
+                            <div className="line-clamp-2 opacity-90">
+                              {quoted.audio ? "🎤 Mensaje de voz" : quoted.text || "(mensaje)"}
+                            </div>
+                          </button>
+                        )}
+                        <div id={`msg-${m.id}`} className="rounded-md transition-shadow">
+                          {m.audio ? (
+                            <AudioPlayer
+                              url={m.audio.url}
+                              durationSec={m.audio.durationSec}
+                              variant={me ? "outgoing" : "incoming"}
+                            />
+                          ) : (
+                            <span className="whitespace-pre-wrap break-words">{m.text}</span>
+                          )}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => startReply(m.id)}
+                        className={cn(
+                          "absolute top-1/2 hidden h-7 w-7 -translate-y-1/2 place-items-center rounded-full border bg-card text-muted-foreground shadow-sm hover:bg-muted group-hover:grid",
+                          me ? "-left-9" : "-right-9",
+                        )}
+                        title="Responder a este mensaje"
+                      >
+                        <Reply className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                    <span className="mt-1 text-[10px] text-muted-foreground" suppressHydrationWarning>
+                      {format(m.createdAt, "p", { locale: es })}
+                    </span>
                   </div>
-                  <span className="mt-1 text-[10px] text-muted-foreground" suppressHydrationWarning>
-                    {format(m.createdAt, "p", { locale: es })}
-                  </span>
                 </div>
-              </div>
+              </SwipeToReply>
             );
           })}
         </div>
@@ -313,17 +369,45 @@ export function ChatPanel() {
         className="border-t bg-card px-3 py-3 md:px-5"
         style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 0.75rem)" }}
       >
-        <div className="mx-auto flex max-w-3xl items-end gap-2 rounded-xl border bg-background p-2 focus-within:ring-2 focus-within:ring-ring/40">
+        <div className="mx-auto max-w-3xl">
+          {replyTarget && (
+            <div className="mb-2 flex items-center gap-2 rounded-lg border-l-2 border-primary bg-primary/5 px-3 py-2 text-xs">
+              <Reply className="h-3.5 w-3.5 shrink-0 text-primary" />
+              <div className="min-w-0 flex-1">
+                <div className="text-[10px] font-semibold text-primary">
+                  Respondiendo a {replyTargetContact ? contact.name : replyTarget.sender === "bot" ? "Bot Gemini" : "ti"}
+                </div>
+                <div className="truncate text-foreground/80">
+                  {replyTarget.audio ? (
+                    <span className="inline-flex items-center gap-1"><Mic className="h-3 w-3" /> Mensaje de voz</span>
+                  ) : (
+                    replyTarget.text
+                  )}
+                </div>
+              </div>
+              <button
+                onClick={() => setReplyToId(null)}
+                className="grid h-6 w-6 shrink-0 place-items-center rounded-md text-muted-foreground hover:bg-muted"
+                title="Cancelar respuesta"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          )}
+          <div className="flex items-end gap-2 rounded-xl border bg-background p-2 focus-within:ring-2 focus-within:ring-ring/40">
           <button className="grid h-9 w-9 place-items-center rounded-lg text-muted-foreground hover:bg-muted">
             <Paperclip className="h-4 w-4" />
           </button>
           <textarea
+            ref={inputRef}
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
                 onSend();
+              } else if (e.key === "Escape" && replyToId) {
+                setReplyToId(null);
               }
             }}
             placeholder={contact.blocked ? "Este contacto está bloqueado, pero puedes responder manualmente…" : "Escribe un mensaje… (al responder, el bot se pausará 30 min)"}
@@ -341,6 +425,7 @@ export function ChatPanel() {
             <Send className="h-3.5 w-3.5" />
             Enviar
           </button>
+          </div>
         </div>
       </div>
     </div>
