@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Bot, Send, CheckCircle2, Play, Paperclip, Smile, TrendingUp, UserPlus, ArrowLeft, Pause, Trash2, Ban, ShieldOff, MailOpen, Mail, Copy } from "lucide-react";
+import { Bot, Send, CheckCircle2, Play, Paperclip, Smile, TrendingUp, UserPlus, ArrowLeft, Pause, Trash2, Ban, ShieldOff, MailOpen, Mail, Copy, Reply, X, Mic } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { useInbox } from "@/lib/inbox-store";
@@ -10,6 +10,8 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { MoreMenu, type MenuAction } from "./MoreMenu";
 import { useAuth } from "@/lib/auth-store";
+import { AudioPlayer } from "./AudioPlayer";
+import { SwipeToReply } from "./MessageBubble";
 
 function formatRemaining(ms: number) {
   const m = Math.max(0, Math.ceil(ms / 60000));
