@@ -28,7 +28,7 @@ export function ChatPanel() {
     selectedConversationId, conversations, contacts, messages, sendAgentMessage,
     resumeBot, resolveConversation, deals, createDeal, pipelineStages, selectDeal,
     saveContact, selectConversation, deleteConversation, toggleUnread, toggleBotPause,
-    toggleBlockContact,
+    toggleBlockContact, sendAgentReply,
   } = useInbox();
   const { isAdmin } = useAuth();
   const navigate = useNavigate();
@@ -42,7 +42,9 @@ export function ChatPanel() {
   const [draft, setDraft] = useState("");
   const [showDeal, setShowDeal] = useState(false);
   const [showSave, setShowSave] = useState(false);
+  const [replyToId, setReplyToId] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
@@ -127,9 +129,22 @@ export function ChatPanel() {
 
   const onSend = () => {
     if (!draft.trim()) return;
-    sendAgentMessage(conv.id, draft);
+    if (replyToId) {
+      sendAgentReply(conv.id, draft, replyToId);
+    } else {
+      sendAgentMessage(conv.id, draft);
+    }
     setDraft("");
+    setReplyToId(null);
   };
+
+  const startReply = (mid: string) => {
+    setReplyToId(mid);
+    setTimeout(() => inputRef.current?.focus(), 50);
+  };
+
+  const replyTarget = replyToId ? thread.find((m) => m.id === replyToId) : null;
+  const replyTargetContact = replyTarget?.sender === "contact";
 
   const handleCreateDeal = (input: { title: string; amount: number; currency: string; stage: string }) => {
     const id = createDeal({ title: input.title, contactId: contact.id, amount: input.amount, currency: input.currency, stage: input.stage });
