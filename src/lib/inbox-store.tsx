@@ -24,6 +24,8 @@ interface InboxState {
   selectedConversationId: string | null;
   selectConversation: (id: string | null) => void;
   sendAgentMessage: (conversationId: string, text: string) => void;
+  /** Send an agent message with optional quoted reply */
+  sendAgentReply: (conversationId: string, text: string, replyToId?: string | null) => void;
   toggleBlockContact: (contactId: string) => void;
   resumeBot: (conversationId: string) => void;
   markAsRead: (conversationId: string) => void;
@@ -126,6 +128,27 @@ export function InboxProvider({ children }: { children: ReactNode }) {
       sender: "agent",
       text: trimmed,
       createdAt: Date.now(),
+    };
+    setMessages((prev) => [...prev, newMsg]);
+    setConversations((prev) =>
+      prev.map((c) =>
+        c.id === conversationId
+          ? { ...c, lastMessageAt: newMsg.createdAt, botPausedUntil: Date.now() + BOT_PAUSE_MS, unread: 0 }
+          : c,
+      ),
+    );
+  }, []);
+
+  const sendAgentReply = useCallback((conversationId: string, text: string, replyToId?: string | null) => {
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    const newMsg: Message = {
+      id: uid(),
+      conversationId,
+      sender: "agent",
+      text: trimmed,
+      createdAt: Date.now(),
+      replyToId: replyToId ?? undefined,
     };
     setMessages((prev) => [...prev, newMsg]);
     setConversations((prev) =>
@@ -409,6 +432,7 @@ export function InboxProvider({ children }: { children: ReactNode }) {
       selectedConversationId,
       selectConversation,
       sendAgentMessage,
+      sendAgentReply,
       toggleBlockContact,
       resumeBot,
       markAsRead,
@@ -455,6 +479,7 @@ export function InboxProvider({ children }: { children: ReactNode }) {
       selectedConversationId,
       selectConversation,
       sendAgentMessage,
+      sendAgentReply,
       toggleBlockContact,
       resumeBot,
       markAsRead,

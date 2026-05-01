@@ -35,6 +35,27 @@ export const initialMessages: Message[] = [
   { id: "m2", conversationId: "v1", sender: "bot", text: "¡Hola María! Soy el asistente IA. Sí, el plan Pro está disponible por 49€/mes e incluye soporte prioritario. ¿Quieres que te envíe un enlace de pago?", createdAt: m(39) },
   { id: "m3", conversationId: "v1", sender: "contact", text: "Sí, por favor.", createdAt: m(10) },
   { id: "m4", conversationId: "v1", sender: "contact", text: "Y otra cosa, ¿se puede pagar anual?", createdAt: m(3) },
+  // Nota de voz de María + respuesta citada del agente
+  {
+    id: "m4a",
+    conversationId: "v1",
+    sender: "contact",
+    text: "",
+    createdAt: m(2),
+    audio: {
+      url: "https://cdn.pixabay.com/download/audio/2022/03/15/audio_2c5e1e4b3e.mp3?filename=notification-sound-7062.mp3",
+      durationSec: 4,
+      mime: "audio/mpeg",
+    },
+  },
+  {
+    id: "m4b",
+    conversationId: "v1",
+    sender: "agent",
+    text: "¡Claro! Con pago anual tienes 2 meses gratis 🎉",
+    createdAt: m(1),
+    replyToId: "m4",
+  },
 
   // v2 – Carlos
   { id: "m5", conversationId: "v2", sender: "contact", text: "Buenas, vi su anuncio en LinkedIn", createdAt: m(60) },
@@ -56,6 +77,19 @@ export const initialMessages: Message[] = [
   { id: "m15", conversationId: "v5", sender: "bot", text: "¡Hola Diego! Estoy aquí para ayudarte. Cuéntame qué necesitas.", createdAt: h(5.4) },
   { id: "m16", conversationId: "v5", sender: "contact", text: "Quiero info de precios", createdAt: h(5.2) },
   { id: "m17", conversationId: "v5", sender: "contact", text: "Y métodos de pago", createdAt: h(5) },
+  // Audio en otra conversación
+  {
+    id: "m17a",
+    conversationId: "v5",
+    sender: "contact",
+    text: "",
+    createdAt: h(4.9),
+    audio: {
+      url: "https://cdn.pixabay.com/download/audio/2021/08/04/audio_0625c1539c.mp3?filename=tick-tock-clock-timer-60-seconds-9329.mp3",
+      durationSec: 8,
+      mime: "audio/mpeg",
+    },
+  },
 
   // v6 – Elena (resuelta)
   { id: "m18", conversationId: "v6", sender: "contact", text: "Gracias por la ayuda!", createdAt: h(20) },

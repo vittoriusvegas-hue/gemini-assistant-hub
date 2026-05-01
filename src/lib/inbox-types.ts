@@ -8,6 +8,17 @@ export interface Message {
   sender: MessageSender;
   text: string;
   createdAt: number;
+  /** id of the message this one replies to (WhatsApp-like quoted reply) */
+  replyToId?: string;
+  /** Optional audio attachment (voice note). When present, the message is rendered as an audio player. */
+  audio?: {
+    /** URL or data URL of the audio file */
+    url: string;
+    /** Duration in seconds (if known) */
+    durationSec?: number;
+    /** mime type, e.g. "audio/mpeg", "audio/ogg" */
+    mime?: string;
+  };
 }
 
 export interface Contact {
