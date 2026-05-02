@@ -26,8 +26,8 @@ function Index() {
 }
 
 function Inner() {
-  const { selectedConversationId } = useInbox();
-  const hasSelection = !!selectedConversationId;
+  const { selectedConversationId, draftContactId } = useInbox();
+  const hasSelection = !!selectedConversationId || !!draftContactId;
   return (
     <>
       {/* On mobile: show list OR chat. On md+: show both. */}
