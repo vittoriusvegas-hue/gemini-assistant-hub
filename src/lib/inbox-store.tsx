@@ -23,6 +23,12 @@ interface InboxState {
   messages: Message[];
   selectedConversationId: string | null;
   selectConversation: (id: string | null) => void;
+  /** Contact id of a draft (not-yet-persisted) conversation. The chat opens with this contact, but no entry appears in the inbox until the agent sends the first message. */
+  draftContactId: string | null;
+  /** Begin a draft conversation with a contact. If a real conversation already exists, it is selected instead. */
+  startDraftConversation: (contactId: string) => void;
+  /** Discard the current draft (without sending). */
+  cancelDraftConversation: () => void;
   sendAgentMessage: (conversationId: string, text: string) => void;
   /** Send an agent message with optional quoted reply */
   sendAgentReply: (conversationId: string, text: string, replyToId?: string | null) => void;
@@ -95,6 +101,7 @@ export function InboxProvider({ children }: { children: ReactNode }) {
   const [conversations, setConversations] = useState<Conversation[]>(initialConversations);
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>("v1");
+  const [draftContactId, setDraftContactId] = useState<string | null>(null);
   const [deals, setDeals] = useState<Deal[]>(initialDeals);
   const [selectedDealId, setSelectedDealId] = useState<string | null>(initialDeals[0]?.id ?? null);
   const [aiSettings, setAISettings] = useState<AISettings>(DEFAULT_AI_SETTINGS);
@@ -110,9 +117,27 @@ export function InboxProvider({ children }: { children: ReactNode }) {
 
   const selectConversation = useCallback((id: string | null) => {
     setSelectedConversationId(id);
+    if (id) setDraftContactId(null);
     if (id) {
       setConversations((prev) => prev.map((c) => (c.id === id ? { ...c, unread: 0 } : c)));
     }
+  }, []);
+
+  const startDraftConversation = useCallback((contactId: string) => {
+    // If a real conversation exists for this contact, open it instead of a draft.
+    const existing = conversations.find((c) => c.contactId === contactId);
+    if (existing) {
+      setDraftContactId(null);
+      setSelectedConversationId(existing.id);
+      setConversations((prev) => prev.map((c) => (c.id === existing.id ? { ...c, unread: 0 } : c)));
+      return;
+    }
+    setSelectedConversationId(null);
+    setDraftContactId(contactId);
+  }, [conversations]);
+
+  const cancelDraftConversation = useCallback(() => {
+    setDraftContactId(null);
   }, []);
 
   const markAsRead = useCallback((conversationId: string) => {
@@ -122,9 +147,26 @@ export function InboxProvider({ children }: { children: ReactNode }) {
   const sendAgentMessage = useCallback((conversationId: string, text: string) => {
     const trimmed = text.trim();
     if (!trimmed) return;
+    // If this is a draft conversation id, materialize it first.
+    let realId = conversationId;
+    if (conversationId.startsWith("draft:")) {
+      const contactId = conversationId.slice("draft:".length);
+      realId = uid();
+      const newConv: Conversation = {
+        id: realId,
+        contactId,
+        unread: 0,
+        lastMessageAt: Date.now(),
+        status: "open",
+        botPausedUntil: null,
+      };
+      setConversations((prev) => [newConv, ...prev]);
+      setDraftContactId(null);
+      setSelectedConversationId(realId);
+    }
     const newMsg: Message = {
       id: uid(),
-      conversationId,
+      conversationId: realId,
       sender: "agent",
       text: trimmed,
       createdAt: Date.now(),
@@ -132,7 +174,7 @@ export function InboxProvider({ children }: { children: ReactNode }) {
     setMessages((prev) => [...prev, newMsg]);
     setConversations((prev) =>
       prev.map((c) =>
-        c.id === conversationId
+        c.id === realId
           ? { ...c, lastMessageAt: newMsg.createdAt, botPausedUntil: Date.now() + BOT_PAUSE_MS, unread: 0 }
           : c,
       ),
@@ -142,9 +184,25 @@ export function InboxProvider({ children }: { children: ReactNode }) {
   const sendAgentReply = useCallback((conversationId: string, text: string, replyToId?: string | null) => {
     const trimmed = text.trim();
     if (!trimmed) return;
+    let realId = conversationId;
+    if (conversationId.startsWith("draft:")) {
+      const contactId = conversationId.slice("draft:".length);
+      realId = uid();
+      const newConv: Conversation = {
+        id: realId,
+        contactId,
+        unread: 0,
+        lastMessageAt: Date.now(),
+        status: "open",
+        botPausedUntil: null,
+      };
+      setConversations((prev) => [newConv, ...prev]);
+      setDraftContactId(null);
+      setSelectedConversationId(realId);
+    }
     const newMsg: Message = {
       id: uid(),
-      conversationId,
+      conversationId: realId,
       sender: "agent",
       text: trimmed,
       createdAt: Date.now(),
@@ -153,7 +211,7 @@ export function InboxProvider({ children }: { children: ReactNode }) {
     setMessages((prev) => [...prev, newMsg]);
     setConversations((prev) =>
       prev.map((c) =>
-        c.id === conversationId
+        c.id === realId
           ? { ...c, lastMessageAt: newMsg.createdAt, botPausedUntil: Date.now() + BOT_PAUSE_MS, unread: 0 }
           : c,
       ),
@@ -431,6 +489,9 @@ export function InboxProvider({ children }: { children: ReactNode }) {
       messages,
       selectedConversationId,
       selectConversation,
+      draftContactId,
+      startDraftConversation,
+      cancelDraftConversation,
       sendAgentMessage,
       sendAgentReply,
       toggleBlockContact,
@@ -478,6 +539,9 @@ export function InboxProvider({ children }: { children: ReactNode }) {
       messages,
       selectedConversationId,
       selectConversation,
+      draftContactId,
+      startDraftConversation,
+      cancelDraftConversation,
       sendAgentMessage,
       sendAgentReply,
       toggleBlockContact,
