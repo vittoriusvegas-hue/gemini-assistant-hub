@@ -426,6 +426,40 @@ export function ChatPanel() {
                               durationSec={m.audio.durationSec}
                               variant={me ? "outgoing" : "incoming"}
                             />
+                          ) : m.attachment?.kind === "image" ? (
+                            <div className="flex flex-col gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => setLightbox({ url: m.attachment!.url, name: m.attachment!.name })}
+                                className="block overflow-hidden rounded-lg"
+                                title="Ver imagen"
+                              >
+                                <img
+                                  src={m.attachment.url}
+                                  alt={m.attachment.name}
+                                  className="max-h-72 w-full max-w-[320px] object-cover"
+                                  loading="lazy"
+                                />
+                              </button>
+                              {m.text && m.text !== "📷 Imagen" && (
+                                <span className="whitespace-pre-wrap break-words">{m.text}</span>
+                              )}
+                            </div>
+                          ) : m.attachment ? (
+                            <a
+                              href={m.attachment.url}
+                              download={m.attachment.name}
+                              target="_blank"
+                              rel="noreferrer"
+                              className={cn(
+                                "flex items-center gap-2 rounded-lg border px-2.5 py-2 text-xs",
+                                me ? "border-white/30 bg-white/10" : "border-border bg-muted/40",
+                              )}
+                            >
+                              <FileText className="h-4 w-4 shrink-0" />
+                              <span className="min-w-0 flex-1 truncate">{m.attachment.name}</span>
+                              <Download className="h-3.5 w-3.5 shrink-0 opacity-70" />
+                            </a>
                           ) : (
                             <span className="whitespace-pre-wrap break-words">{m.text}</span>
                           )}
