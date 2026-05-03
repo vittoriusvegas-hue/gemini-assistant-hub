@@ -126,7 +126,15 @@ export function UsersProvider({ children }: { children: ReactNode }) {
       const raw = typeof window !== "undefined" ? window.localStorage.getItem(STORAGE_KEY) : null;
       if (raw) {
         const parsed = JSON.parse(raw) as ManagedUser[];
-        if (Array.isArray(parsed) && parsed.length > 0) setUsers(parsed);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          // Migrate: ensure every user has all known feature keys (older
+          // persisted records may be missing newly added features).
+          const migrated = parsed.map((u) => ({
+            ...u,
+            features: { ...defaultFeaturesFor(u.role), ...(u.features ?? {}) },
+          }));
+          setUsers(migrated);
+        }
       }
     } catch { /* ignore */ }
   }, []);
