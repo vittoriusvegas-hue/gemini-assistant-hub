@@ -19,6 +19,14 @@ export interface Message {
     /** mime type, e.g. "audio/mpeg", "audio/ogg" */
     mime?: string;
   };
+  /** Optional file/image attachment. When `kind` is "image" the bubble renders an inline preview. */
+  attachment?: {
+    url: string;
+    name: string;
+    mime?: string;
+    size?: number;
+    kind: "image" | "file";
+  };
 }
 
 export interface Contact {
