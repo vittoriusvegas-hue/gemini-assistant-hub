@@ -415,7 +415,13 @@ export function ChatPanel() {
                               {quotedAuthor}
                             </div>
                             <div className="line-clamp-2 opacity-90">
-                              {quoted.audio ? "🎤 Mensaje de voz" : quoted.text || "(mensaje)"}
+                              {quoted.audio
+                                ? "🎤 Mensaje de voz"
+                                : quoted.attachment?.kind === "image"
+                                  ? "🖼️ Imagen"
+                                  : quoted.attachment
+                                    ? `📎 ${quoted.attachment.name}`
+                                    : quoted.text || "(mensaje)"}
                             </div>
                           </button>
                         )}
@@ -502,6 +508,10 @@ export function ChatPanel() {
                 <div className="truncate text-foreground/80">
                   {replyTarget.audio ? (
                     <span className="inline-flex items-center gap-1"><Mic className="h-3 w-3" /> Mensaje de voz</span>
+                  ) : replyTarget.attachment?.kind === "image" ? (
+                    <span className="inline-flex items-center gap-1"><ImageIcon className="h-3 w-3" /> Imagen</span>
+                  ) : replyTarget.attachment ? (
+                    <span className="inline-flex items-center gap-1"><FileText className="h-3 w-3" /> {replyTarget.attachment.name}</span>
                   ) : (
                     replyTarget.text
                   )}
