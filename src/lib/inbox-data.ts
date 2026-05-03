@@ -56,6 +56,20 @@ export const initialMessages: Message[] = [
     createdAt: m(1),
     replyToId: "m4",
   },
+  // Imagen enviada por el contacto (María)
+  {
+    id: "m4c",
+    conversationId: "v1",
+    sender: "contact",
+    text: "Mira, este es el error que me sale 👇",
+    createdAt: m(1),
+    attachment: {
+      url: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=900&q=80",
+      name: "captura-error.jpg",
+      mime: "image/jpeg",
+      kind: "image",
+    },
+  },
 
   // v2 – Carlos
   { id: "m5", conversationId: "v2", sender: "contact", text: "Buenas, vi su anuncio en LinkedIn", createdAt: m(60) },

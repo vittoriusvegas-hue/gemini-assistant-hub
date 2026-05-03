@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Bot, Send, CheckCircle2, Play, Paperclip, Smile, TrendingUp, UserPlus, ArrowLeft, Pause, Trash2, Ban, ShieldOff, MailOpen, Mail, Copy, Reply, X, Mic } from "lucide-react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { Bot, Send, CheckCircle2, Play, Paperclip, Smile, TrendingUp, UserPlus, ArrowLeft, Pause, Trash2, Ban, ShieldOff, MailOpen, Mail, Copy, Reply, X, Mic, FileText, Download, ImageIcon } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { useInbox } from "@/lib/inbox-store";
@@ -12,6 +12,8 @@ import { MoreMenu, type MenuAction } from "./MoreMenu";
 import { useAuth } from "@/lib/auth-store";
 import { AudioPlayer } from "./AudioPlayer";
 import { SwipeToReply } from "./MessageBubble";
+
+const EmojiPicker = lazy(() => import("emoji-picker-react"));
 
 function formatRemaining(ms: number) {
   const m = Math.max(0, Math.ceil(ms / 60000));
@@ -59,8 +61,11 @@ export function ChatPanel() {
   const [showDeal, setShowDeal] = useState(false);
   const [showSave, setShowSave] = useState(false);
   const [replyToId, setReplyToId] = useState<string | null>(null);
+  const [showEmoji, setShowEmoji] = useState(false);
+  const [lightbox, setLightbox] = useState<{ url: string; name: string } | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
@@ -155,6 +160,51 @@ export function ChatPanel() {
     }
     setDraft("");
     setReplyToId(null);
+    setShowEmoji(false);
+  };
+
+  const onPickFiles = (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    Array.from(files).forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const url = String(reader.result);
+        const isImage = file.type.startsWith("image/");
+        const attachment = {
+          url,
+          name: file.name,
+          mime: file.type,
+          size: file.size,
+          kind: isImage ? ("image" as const) : ("file" as const),
+        };
+        if (replyToId) {
+          sendAgentReply(conv.id, draft || (isImage ? "📷 Imagen" : `📎 ${file.name}`), replyToId, { attachment });
+        } else {
+          sendAgentMessage(conv.id, draft || (isImage ? "📷 Imagen" : `📎 ${file.name}`), { attachment });
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+    setDraft("");
+    setReplyToId(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const insertEmoji = (emoji: string) => {
+    const el = inputRef.current;
+    if (!el) {
+      setDraft((d) => d + emoji);
+      return;
+    }
+    const start = el.selectionStart ?? draft.length;
+    const end = el.selectionEnd ?? draft.length;
+    const next = draft.slice(0, start) + emoji + draft.slice(end);
+    setDraft(next);
+    requestAnimationFrame(() => {
+      el.focus();
+      const pos = start + emoji.length;
+      el.setSelectionRange(pos, pos);
+    });
   };
 
   const startReply = (mid: string) => {
@@ -365,7 +415,13 @@ export function ChatPanel() {
                               {quotedAuthor}
                             </div>
                             <div className="line-clamp-2 opacity-90">
-                              {quoted.audio ? "🎤 Mensaje de voz" : quoted.text || "(mensaje)"}
+                              {quoted.audio
+                                ? "🎤 Mensaje de voz"
+                                : quoted.attachment?.kind === "image"
+                                  ? "🖼️ Imagen"
+                                  : quoted.attachment
+                                    ? `📎 ${quoted.attachment.name}`
+                                    : quoted.text || "(mensaje)"}
                             </div>
                           </button>
                         )}
@@ -376,6 +432,40 @@ export function ChatPanel() {
                               durationSec={m.audio.durationSec}
                               variant={me ? "outgoing" : "incoming"}
                             />
+                          ) : m.attachment?.kind === "image" ? (
+                            <div className="flex flex-col gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => setLightbox({ url: m.attachment!.url, name: m.attachment!.name })}
+                                className="block overflow-hidden rounded-lg"
+                                title="Ver imagen"
+                              >
+                                <img
+                                  src={m.attachment.url}
+                                  alt={m.attachment.name}
+                                  className="max-h-72 w-full max-w-[320px] object-cover"
+                                  loading="lazy"
+                                />
+                              </button>
+                              {m.text && m.text !== "📷 Imagen" && (
+                                <span className="whitespace-pre-wrap break-words">{m.text}</span>
+                              )}
+                            </div>
+                          ) : m.attachment ? (
+                            <a
+                              href={m.attachment.url}
+                              download={m.attachment.name}
+                              target="_blank"
+                              rel="noreferrer"
+                              className={cn(
+                                "flex items-center gap-2 rounded-lg border px-2.5 py-2 text-xs",
+                                me ? "border-white/30 bg-white/10" : "border-border bg-muted/40",
+                              )}
+                            >
+                              <FileText className="h-4 w-4 shrink-0" />
+                              <span className="min-w-0 flex-1 truncate">{m.attachment.name}</span>
+                              <Download className="h-3.5 w-3.5 shrink-0 opacity-70" />
+                            </a>
                           ) : (
                             <span className="whitespace-pre-wrap break-words">{m.text}</span>
                           )}
@@ -418,6 +508,10 @@ export function ChatPanel() {
                 <div className="truncate text-foreground/80">
                   {replyTarget.audio ? (
                     <span className="inline-flex items-center gap-1"><Mic className="h-3 w-3" /> Mensaje de voz</span>
+                  ) : replyTarget.attachment?.kind === "image" ? (
+                    <span className="inline-flex items-center gap-1"><ImageIcon className="h-3 w-3" /> Imagen</span>
+                  ) : replyTarget.attachment ? (
+                    <span className="inline-flex items-center gap-1"><FileText className="h-3 w-3" /> {replyTarget.attachment.name}</span>
                   ) : (
                     replyTarget.text
                   )}
@@ -433,7 +527,20 @@ export function ChatPanel() {
             </div>
           )}
           <div className="flex items-end gap-2 rounded-xl border bg-background p-2 focus-within:ring-2 focus-within:ring-ring/40">
-          <button className="grid h-9 w-9 place-items-center rounded-lg text-muted-foreground hover:bg-muted">
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.txt,.zip"
+            className="hidden"
+            onChange={(e) => onPickFiles(e.target.files)}
+          />
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="grid h-9 w-9 place-items-center rounded-lg text-muted-foreground hover:bg-muted"
+            title="Adjuntar archivo"
+          >
             <Paperclip className="h-4 w-4" />
           </button>
           <textarea
@@ -452,9 +559,36 @@ export function ChatPanel() {
             rows={1}
             className="max-h-32 flex-1 resize-none bg-transparent px-1 py-2 text-sm outline-none placeholder:text-muted-foreground"
           />
-          <button className="grid h-9 w-9 place-items-center rounded-lg text-muted-foreground hover:bg-muted">
-            <Smile className="h-4 w-4" />
-          </button>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setShowEmoji((v) => !v)}
+              className={cn(
+                "grid h-9 w-9 place-items-center rounded-lg hover:bg-muted",
+                showEmoji ? "bg-muted text-foreground" : "text-muted-foreground",
+              )}
+              title="Emojis"
+            >
+              <Smile className="h-4 w-4" />
+            </button>
+            {showEmoji && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setShowEmoji(false)} />
+                <div className="absolute bottom-11 right-0 z-50">
+                  <Suspense fallback={<div className="rounded-lg border bg-card p-3 text-xs text-muted-foreground shadow-xl">Cargando…</div>}>
+                    <EmojiPicker
+                      onEmojiClick={(e) => insertEmoji(e.emoji)}
+                      width={320}
+                      height={380}
+                      lazyLoadEmojis
+                      searchPlaceholder="Buscar emoji"
+                      previewConfig={{ showPreview: false }}
+                    />
+                  </Suspense>
+                </div>
+              </>
+            )}
+          </div>
           <button
             onClick={onSend}
             disabled={!draft.trim()}
@@ -466,6 +600,37 @@ export function ChatPanel() {
           </div>
         </div>
       </div>
+
+      {lightbox && (
+        <div
+          className="fixed inset-0 z-[60] grid place-items-center bg-black/85 p-4"
+          onClick={() => setLightbox(null)}
+        >
+          <button
+            type="button"
+            onClick={() => setLightbox(null)}
+            className="absolute right-4 top-4 grid h-9 w-9 place-items-center rounded-full bg-white/10 text-white hover:bg-white/20"
+            title="Cerrar"
+          >
+            <X className="h-4 w-4" />
+          </button>
+          <a
+            href={lightbox.url}
+            download={lightbox.name}
+            onClick={(e) => e.stopPropagation()}
+            className="absolute right-16 top-4 inline-flex h-9 items-center gap-1.5 rounded-full bg-white/10 px-3 text-xs font-medium text-white hover:bg-white/20"
+            title="Descargar"
+          >
+            <Download className="h-3.5 w-3.5" /> Descargar
+          </a>
+          <img
+            src={lightbox.url}
+            alt={lightbox.name}
+            onClick={(e) => e.stopPropagation()}
+            className="max-h-[90vh] max-w-[92vw] rounded-lg shadow-2xl"
+          />
+        </div>
+      )}
     </div>
   );
 }
