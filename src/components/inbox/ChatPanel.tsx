@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Bot, Send, CheckCircle2, Play, Paperclip, Smile, TrendingUp, UserPlus, ArrowLeft, Pause, Trash2, Ban, ShieldOff, MailOpen, Mail, Copy, Reply, X, Mic } from "lucide-react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { Bot, Send, CheckCircle2, Play, Paperclip, Smile, TrendingUp, UserPlus, ArrowLeft, Pause, Trash2, Ban, ShieldOff, MailOpen, Mail, Copy, Reply, X, Mic, FileText, Download, ImageIcon } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { useInbox } from "@/lib/inbox-store";
@@ -12,6 +12,8 @@ import { MoreMenu, type MenuAction } from "./MoreMenu";
 import { useAuth } from "@/lib/auth-store";
 import { AudioPlayer } from "./AudioPlayer";
 import { SwipeToReply } from "./MessageBubble";
+
+const EmojiPicker = lazy(() => import("emoji-picker-react"));
 
 function formatRemaining(ms: number) {
   const m = Math.max(0, Math.ceil(ms / 60000));
@@ -59,8 +61,11 @@ export function ChatPanel() {
   const [showDeal, setShowDeal] = useState(false);
   const [showSave, setShowSave] = useState(false);
   const [replyToId, setReplyToId] = useState<string | null>(null);
+  const [showEmoji, setShowEmoji] = useState(false);
+  const [lightbox, setLightbox] = useState<{ url: string; name: string } | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
@@ -155,6 +160,51 @@ export function ChatPanel() {
     }
     setDraft("");
     setReplyToId(null);
+    setShowEmoji(false);
+  };
+
+  const onPickFiles = (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    Array.from(files).forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const url = String(reader.result);
+        const isImage = file.type.startsWith("image/");
+        const attachment = {
+          url,
+          name: file.name,
+          mime: file.type,
+          size: file.size,
+          kind: isImage ? ("image" as const) : ("file" as const),
+        };
+        if (replyToId) {
+          sendAgentReply(conv.id, draft || (isImage ? "📷 Imagen" : `📎 ${file.name}`), replyToId, { attachment });
+        } else {
+          sendAgentMessage(conv.id, draft || (isImage ? "📷 Imagen" : `📎 ${file.name}`), { attachment });
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+    setDraft("");
+    setReplyToId(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const insertEmoji = (emoji: string) => {
+    const el = inputRef.current;
+    if (!el) {
+      setDraft((d) => d + emoji);
+      return;
+    }
+    const start = el.selectionStart ?? draft.length;
+    const end = el.selectionEnd ?? draft.length;
+    const next = draft.slice(0, start) + emoji + draft.slice(end);
+    setDraft(next);
+    requestAnimationFrame(() => {
+      el.focus();
+      const pos = start + emoji.length;
+      el.setSelectionRange(pos, pos);
+    });
   };
 
   const startReply = (mid: string) => {
