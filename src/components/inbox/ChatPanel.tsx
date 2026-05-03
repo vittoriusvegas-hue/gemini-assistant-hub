@@ -517,7 +517,20 @@ export function ChatPanel() {
             </div>
           )}
           <div className="flex items-end gap-2 rounded-xl border bg-background p-2 focus-within:ring-2 focus-within:ring-ring/40">
-          <button className="grid h-9 w-9 place-items-center rounded-lg text-muted-foreground hover:bg-muted">
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.txt,.zip"
+            className="hidden"
+            onChange={(e) => onPickFiles(e.target.files)}
+          />
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="grid h-9 w-9 place-items-center rounded-lg text-muted-foreground hover:bg-muted"
+            title="Adjuntar archivo"
+          >
             <Paperclip className="h-4 w-4" />
           </button>
           <textarea
@@ -536,9 +549,36 @@ export function ChatPanel() {
             rows={1}
             className="max-h-32 flex-1 resize-none bg-transparent px-1 py-2 text-sm outline-none placeholder:text-muted-foreground"
           />
-          <button className="grid h-9 w-9 place-items-center rounded-lg text-muted-foreground hover:bg-muted">
-            <Smile className="h-4 w-4" />
-          </button>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setShowEmoji((v) => !v)}
+              className={cn(
+                "grid h-9 w-9 place-items-center rounded-lg hover:bg-muted",
+                showEmoji ? "bg-muted text-foreground" : "text-muted-foreground",
+              )}
+              title="Emojis"
+            >
+              <Smile className="h-4 w-4" />
+            </button>
+            {showEmoji && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setShowEmoji(false)} />
+                <div className="absolute bottom-11 right-0 z-50">
+                  <Suspense fallback={<div className="rounded-lg border bg-card p-3 text-xs text-muted-foreground shadow-xl">Cargando…</div>}>
+                    <EmojiPicker
+                      onEmojiClick={(e) => insertEmoji(e.emoji)}
+                      width={320}
+                      height={380}
+                      lazyLoadEmojis
+                      searchPlaceholder="Buscar emoji"
+                      previewConfig={{ showPreview: false }}
+                    />
+                  </Suspense>
+                </div>
+              </>
+            )}
+          </div>
           <button
             onClick={onSend}
             disabled={!draft.trim()}
@@ -550,6 +590,37 @@ export function ChatPanel() {
           </div>
         </div>
       </div>
+
+      {lightbox && (
+        <div
+          className="fixed inset-0 z-[60] grid place-items-center bg-black/85 p-4"
+          onClick={() => setLightbox(null)}
+        >
+          <button
+            type="button"
+            onClick={() => setLightbox(null)}
+            className="absolute right-4 top-4 grid h-9 w-9 place-items-center rounded-full bg-white/10 text-white hover:bg-white/20"
+            title="Cerrar"
+          >
+            <X className="h-4 w-4" />
+          </button>
+          <a
+            href={lightbox.url}
+            download={lightbox.name}
+            onClick={(e) => e.stopPropagation()}
+            className="absolute right-16 top-4 inline-flex h-9 items-center gap-1.5 rounded-full bg-white/10 px-3 text-xs font-medium text-white hover:bg-white/20"
+            title="Descargar"
+          >
+            <Download className="h-3.5 w-3.5" /> Descargar
+          </a>
+          <img
+            src={lightbox.url}
+            alt={lightbox.name}
+            onClick={(e) => e.stopPropagation()}
+            className="max-h-[90vh] max-w-[92vw] rounded-lg shadow-2xl"
+          />
+        </div>
+      )}
     </div>
   );
 }
