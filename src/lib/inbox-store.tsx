@@ -29,9 +29,9 @@ interface InboxState {
   startDraftConversation: (contactId: string) => void;
   /** Discard the current draft (without sending). */
   cancelDraftConversation: () => void;
-  sendAgentMessage: (conversationId: string, text: string) => void;
+  sendAgentMessage: (conversationId: string, text: string, extra?: Pick<Message, "attachment" | "audio">) => void;
   /** Send an agent message with optional quoted reply */
-  sendAgentReply: (conversationId: string, text: string, replyToId?: string | null) => void;
+  sendAgentReply: (conversationId: string, text: string, replyToId?: string | null, extra?: Pick<Message, "attachment" | "audio">) => void;
   toggleBlockContact: (contactId: string) => void;
   resumeBot: (conversationId: string) => void;
   markAsRead: (conversationId: string) => void;
@@ -144,9 +144,9 @@ export function InboxProvider({ children }: { children: ReactNode }) {
     setConversations((prev) => prev.map((c) => (c.id === conversationId ? { ...c, unread: 0 } : c)));
   }, []);
 
-  const sendAgentMessage = useCallback((conversationId: string, text: string) => {
+  const sendAgentMessage = useCallback((conversationId: string, text: string, extra?: Pick<Message, "attachment" | "audio">) => {
     const trimmed = text.trim();
-    if (!trimmed) return;
+    if (!trimmed && !extra?.attachment && !extra?.audio) return;
     // If this is a draft conversation id, materialize it first.
     let realId = conversationId;
     if (conversationId.startsWith("draft:")) {
@@ -170,6 +170,8 @@ export function InboxProvider({ children }: { children: ReactNode }) {
       sender: "agent",
       text: trimmed,
       createdAt: Date.now(),
+      attachment: extra?.attachment,
+      audio: extra?.audio,
     };
     setMessages((prev) => [...prev, newMsg]);
     setConversations((prev) =>
@@ -181,9 +183,9 @@ export function InboxProvider({ children }: { children: ReactNode }) {
     );
   }, []);
 
-  const sendAgentReply = useCallback((conversationId: string, text: string, replyToId?: string | null) => {
+  const sendAgentReply = useCallback((conversationId: string, text: string, replyToId?: string | null, extra?: Pick<Message, "attachment" | "audio">) => {
     const trimmed = text.trim();
-    if (!trimmed) return;
+    if (!trimmed && !extra?.attachment && !extra?.audio) return;
     let realId = conversationId;
     if (conversationId.startsWith("draft:")) {
       const contactId = conversationId.slice("draft:".length);
@@ -207,6 +209,8 @@ export function InboxProvider({ children }: { children: ReactNode }) {
       text: trimmed,
       createdAt: Date.now(),
       replyToId: replyToId ?? undefined,
+      attachment: extra?.attachment,
+      audio: extra?.audio,
     };
     setMessages((prev) => [...prev, newMsg]);
     setConversations((prev) =>
