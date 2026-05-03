@@ -125,7 +125,7 @@ export function BotPage() {
   );
 }
 
-function Stat({ icon, label, value, accent }: { icon: React.ReactNode; label: string; value: number; accent: "primary" | "warning" | "destructive" }) {
+function Stat({ icon, label, value, accent, sub }: { icon: React.ReactNode; label: string; value: number; accent: "primary" | "warning" | "destructive"; sub?: string }) {
   const color = accent === "primary" ? "var(--primary)" : accent === "warning" ? "var(--warning)" : "var(--destructive)";
   return (
     <div className="rounded-2xl border bg-card p-5 shadow-[var(--shadow-soft)]">
@@ -136,6 +136,20 @@ function Stat({ icon, label, value, accent }: { icon: React.ReactNode; label: st
         {label}
       </div>
       <div className="mt-3 text-3xl font-semibold tracking-tight">{value}</div>
+      {sub && <div className="mt-1 text-xs text-muted-foreground">{sub}</div>}
+    </div>
+  );
+}
+
+function MiniStat({ icon, label, value, hint, positive }: { icon: React.ReactNode; label: string; value: string; hint?: string; positive?: boolean }) {
+  return (
+    <div className="rounded-xl border bg-card p-4 shadow-[var(--shadow-soft)]">
+      <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+        <span className="grid h-6 w-6 place-items-center rounded-md bg-muted text-foreground/80">{icon}</span>
+        {label}
+      </div>
+      <div className={"mt-2 text-2xl font-semibold tracking-tight " + (positive === false ? "text-destructive" : positive === true ? "text-success" : "")}>{value}</div>
+      {hint && <div className="mt-0.5 text-[11px] text-muted-foreground">{hint}</div>}
     </div>
   );
 }
