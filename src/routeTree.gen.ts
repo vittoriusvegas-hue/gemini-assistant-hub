@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SalesRouteImport } from './routes/sales'
+import { Route as InventoryRouteImport } from './routes/inventory'
 import { Route as ContactsRouteImport } from './routes/contacts'
 import { Route as BotRouteImport } from './routes/bot'
 import { Route as AnalyticsRouteImport } from './routes/analytics'
@@ -25,6 +26,11 @@ const SettingsRoute = SettingsRouteImport.update({
 const SalesRoute = SalesRouteImport.update({
   id: '/sales',
   path: '/sales',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InventoryRoute = InventoryRouteImport.update({
+  id: '/inventory',
+  path: '/inventory',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ContactsRoute = ContactsRouteImport.update({
@@ -58,6 +64,7 @@ export interface FileRoutesByFullPath {
   '/analytics': typeof AnalyticsRoute
   '/bot': typeof BotRoute
   '/contacts': typeof ContactsRoute
+  '/inventory': typeof InventoryRoute
   '/sales': typeof SalesRoute
   '/settings': typeof SettingsRoute
   '/api/whatsapp/session': typeof ApiWhatsappSessionRoute
@@ -67,6 +74,7 @@ export interface FileRoutesByTo {
   '/analytics': typeof AnalyticsRoute
   '/bot': typeof BotRoute
   '/contacts': typeof ContactsRoute
+  '/inventory': typeof InventoryRoute
   '/sales': typeof SalesRoute
   '/settings': typeof SettingsRoute
   '/api/whatsapp/session': typeof ApiWhatsappSessionRoute
@@ -77,6 +85,7 @@ export interface FileRoutesById {
   '/analytics': typeof AnalyticsRoute
   '/bot': typeof BotRoute
   '/contacts': typeof ContactsRoute
+  '/inventory': typeof InventoryRoute
   '/sales': typeof SalesRoute
   '/settings': typeof SettingsRoute
   '/api/whatsapp/session': typeof ApiWhatsappSessionRoute
@@ -88,6 +97,7 @@ export interface FileRouteTypes {
     | '/analytics'
     | '/bot'
     | '/contacts'
+    | '/inventory'
     | '/sales'
     | '/settings'
     | '/api/whatsapp/session'
@@ -97,6 +107,7 @@ export interface FileRouteTypes {
     | '/analytics'
     | '/bot'
     | '/contacts'
+    | '/inventory'
     | '/sales'
     | '/settings'
     | '/api/whatsapp/session'
@@ -106,6 +117,7 @@ export interface FileRouteTypes {
     | '/analytics'
     | '/bot'
     | '/contacts'
+    | '/inventory'
     | '/sales'
     | '/settings'
     | '/api/whatsapp/session'
@@ -116,6 +128,7 @@ export interface RootRouteChildren {
   AnalyticsRoute: typeof AnalyticsRoute
   BotRoute: typeof BotRoute
   ContactsRoute: typeof ContactsRoute
+  InventoryRoute: typeof InventoryRoute
   SalesRoute: typeof SalesRoute
   SettingsRoute: typeof SettingsRoute
   ApiWhatsappSessionRoute: typeof ApiWhatsappSessionRoute
@@ -135,6 +148,13 @@ declare module '@tanstack/react-router' {
       path: '/sales'
       fullPath: '/sales'
       preLoaderRoute: typeof SalesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/inventory': {
+      id: '/inventory'
+      path: '/inventory'
+      fullPath: '/inventory'
+      preLoaderRoute: typeof InventoryRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/contacts': {
@@ -180,6 +200,7 @@ const rootRouteChildren: RootRouteChildren = {
   AnalyticsRoute: AnalyticsRoute,
   BotRoute: BotRoute,
   ContactsRoute: ContactsRoute,
+  InventoryRoute: InventoryRoute,
   SalesRoute: SalesRoute,
   SettingsRoute: SettingsRoute,
   ApiWhatsappSessionRoute: ApiWhatsappSessionRoute,

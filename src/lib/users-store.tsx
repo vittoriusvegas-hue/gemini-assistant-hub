@@ -3,12 +3,13 @@ import { useAuth } from "./auth-store";
 
 export type UserRole = "admin" | "agent";
 
-export type FeatureKey = "inbox" | "sales" | "contacts" | "bot" | "analytics" | "settings";
+export type FeatureKey = "inbox" | "sales" | "contacts" | "inventory" | "bot" | "analytics" | "settings";
 
 export const FEATURE_LABELS: Record<FeatureKey, string> = {
   inbox: "Bandeja",
   sales: "Ventas",
   contacts: "Contactos",
+  inventory: "Inventario",
   bot: "Bot IA",
   analytics: "Métricas",
   settings: "Ajustes",
@@ -32,6 +33,7 @@ const DEFAULT_FEATURES_AGENT: Record<FeatureKey, boolean> = {
   inbox: true,
   sales: true,
   contacts: true,
+  inventory: true,
   bot: false,
   analytics: false,
   settings: true,
@@ -41,6 +43,7 @@ const DEFAULT_FEATURES_ADMIN: Record<FeatureKey, boolean> = {
   inbox: true,
   sales: true,
   contacts: true,
+  inventory: true,
   bot: true,
   analytics: true,
   settings: true,
