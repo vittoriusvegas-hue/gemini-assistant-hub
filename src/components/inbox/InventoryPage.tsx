@@ -16,10 +16,14 @@ import {
   DollarSign,
   Minus,
   ImagePlus,
+  FileSpreadsheet,
+  Upload,
+  Download,
 } from "lucide-react";
 import { useInventory, formatMoney, type InventoryItem, type Warehouse, type StorageLocation } from "@/lib/inventory-store";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import * as XLSX from "xlsx";
 
 type ItemDialog = { mode: "new" } | { mode: "edit"; item: InventoryItem } | null;
 type WarehouseDialog = { mode: "new" } | { mode: "edit"; warehouse: Warehouse } | null;
@@ -34,6 +38,7 @@ export function InventoryPage() {
   const [itemDialog, setItemDialog] = useState<ItemDialog>(null);
   const [whDialog, setWhDialog] = useState<WarehouseDialog>(null);
   const [locDialog, setLocDialog] = useState<LocationDialog>(null);
+  const [importOpen, setImportOpen] = useState(false);
 
   const filtered = useMemo(() => {
     return inv.items.filter((i) => {
@@ -63,12 +68,20 @@ export function InventoryPage() {
         </div>
         <div className="flex gap-2">
           {tab === "items" ? (
+            <>
+            <button
+              onClick={() => setImportOpen(true)}
+              className="inline-flex h-10 items-center gap-2 rounded-lg border bg-background px-4 text-sm font-medium hover:bg-muted"
+            >
+              <FileSpreadsheet className="h-4 w-4" /> Importar Excel
+            </button>
             <button
               onClick={() => setItemDialog({ mode: "new" })}
               className="inline-flex h-10 items-center gap-2 rounded-lg bg-[var(--gradient-brand)] px-4 text-sm font-medium text-primary-foreground shadow-[var(--shadow-pop)] hover:opacity-95"
             >
               <Plus className="h-4 w-4" /> Nuevo producto
             </button>
+            </>
           ) : (
             <button
               onClick={() => setWhDialog({ mode: "new" })}
@@ -419,6 +432,7 @@ export function InventoryPage() {
           onClose={() => setLocDialog(null)}
         />
       )}
+      {importOpen && <ImportExcelDialog onClose={() => setImportOpen(false)} />}
     </div>
   );
 }
