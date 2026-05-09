@@ -63,11 +63,11 @@ interface State {
   locations: StorageLocation[];
   items: InventoryItem[];
   // Warehouses
-  addWarehouse: (input: { name: string; address?: string }) => string;
+  addWarehouse: (input: { name: string; address?: string; imageUrl?: string }) => string;
   updateWarehouse: (id: string, patch: Partial<Omit<Warehouse, "id" | "createdAt">>) => void;
   removeWarehouse: (id: string) => void;
   // Locations
-  addLocation: (input: { warehouseId: string; name: string; detail?: string }) => string;
+  addLocation: (input: { warehouseId: string; name: string; detail?: string; imageUrl?: string }) => string;
   updateLocation: (id: string, patch: Partial<Omit<StorageLocation, "id">>) => void;
   removeLocation: (id: string) => void;
   // Items
@@ -107,7 +107,7 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
 
   const addWarehouse: State["addWarehouse"] = useCallback((input) => {
     const id = "w-" + uid();
-    setWarehouses((p) => [...p, { id, name: input.name, address: input.address, createdAt: Date.now() }]);
+    setWarehouses((p) => [...p, { id, name: input.name, address: input.address, imageUrl: input.imageUrl, createdAt: Date.now() }]);
     return id;
   }, []);
   const updateWarehouse: State["updateWarehouse"] = useCallback((id, patch) => {
