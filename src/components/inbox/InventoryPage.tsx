@@ -174,9 +174,13 @@ export function InventoryPage() {
                       <tr key={it.id} className={cn("border-t hover:bg-muted/40", isLow && "bg-warning/5")}>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-3">
-                            <div className="grid h-9 w-9 place-items-center rounded-lg bg-primary-soft text-primary">
-                              <Package className="h-4 w-4" />
-                            </div>
+                            {it.imageUrl ? (
+                              <img src={it.imageUrl} alt={it.name} className="h-9 w-9 rounded-lg object-cover" />
+                            ) : (
+                              <div className="grid h-9 w-9 place-items-center rounded-lg bg-primary-soft text-primary">
+                                <Package className="h-4 w-4" />
+                              </div>
+                            )}
                             <div className="min-w-0">
                               <div className="font-medium">{it.name}</div>
                               {it.sku && <div className="text-xs text-muted-foreground">SKU: {it.sku}</div>}
