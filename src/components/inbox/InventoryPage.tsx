@@ -16,10 +16,14 @@ import {
   DollarSign,
   Minus,
   ImagePlus,
+  FileSpreadsheet,
+  Upload,
+  Download,
 } from "lucide-react";
 import { useInventory, formatMoney, type InventoryItem, type Warehouse, type StorageLocation } from "@/lib/inventory-store";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import * as XLSX from "xlsx";
 
 type ItemDialog = { mode: "new" } | { mode: "edit"; item: InventoryItem } | null;
 type WarehouseDialog = { mode: "new" } | { mode: "edit"; warehouse: Warehouse } | null;
@@ -34,6 +38,7 @@ export function InventoryPage() {
   const [itemDialog, setItemDialog] = useState<ItemDialog>(null);
   const [whDialog, setWhDialog] = useState<WarehouseDialog>(null);
   const [locDialog, setLocDialog] = useState<LocationDialog>(null);
+  const [importOpen, setImportOpen] = useState(false);
 
   const filtered = useMemo(() => {
     return inv.items.filter((i) => {
@@ -63,12 +68,20 @@ export function InventoryPage() {
         </div>
         <div className="flex gap-2">
           {tab === "items" ? (
+            <>
+            <button
+              onClick={() => setImportOpen(true)}
+              className="inline-flex h-10 items-center gap-2 rounded-lg border bg-background px-4 text-sm font-medium hover:bg-muted"
+            >
+              <FileSpreadsheet className="h-4 w-4" /> Importar Excel
+            </button>
             <button
               onClick={() => setItemDialog({ mode: "new" })}
               className="inline-flex h-10 items-center gap-2 rounded-lg bg-[var(--gradient-brand)] px-4 text-sm font-medium text-primary-foreground shadow-[var(--shadow-pop)] hover:opacity-95"
             >
               <Plus className="h-4 w-4" /> Nuevo producto
             </button>
+            </>
           ) : (
             <button
               onClick={() => setWhDialog({ mode: "new" })}
@@ -419,6 +432,7 @@ export function InventoryPage() {
           onClose={() => setLocDialog(null)}
         />
       )}
+      {importOpen && <ImportExcelDialog onClose={() => setImportOpen(false)} />}
     </div>
   );
 }
@@ -687,5 +701,229 @@ function LocationDialogForm({ dialog, onClose }: { dialog: NonNullable<LocationD
         </div>
       </form>
     </Modal>
+  );
+}
+// ----------------------- Excel import -----------------------
+
+type FieldKey = "name" | "sku" | "description" | "quantity" | "unitPrice" | "currency" | "minQuantity" | "alertEnabled" | "locationName" | "locationDetail";
+
+const FIELD_OPTIONS: { key: FieldKey | "ignore"; label: string; required?: boolean }[] = [
+  { key: "ignore", label: "— Ignorar —" },
+  { key: "name", label: "Nombre del producto", required: true },
+  { key: "sku", label: "SKU / Código" },
+  { key: "description", label: "Descripción" },
+  { key: "quantity", label: "Cantidad", required: true },
+  { key: "unitPrice", label: "Precio unitario", required: true },
+  { key: "currency", label: "Moneda" },
+  { key: "minQuantity", label: "Cantidad mínima (alerta)" },
+  { key: "alertEnabled", label: "Alerta activada (sí/no)" },
+  { key: "locationName", label: "Ubicación: nombre" },
+  { key: "locationDetail", label: "Ubicación: detalle" },
+];
+
+function guessMapping(header: string): FieldKey | "ignore" {
+  const h = header.toLowerCase().trim();
+  if (/(nombre|product|item|descripcion corta|titulo|title|name)/.test(h)) return "name";
+  if (/(sku|codigo|code|c[oó]digo)/.test(h)) return "sku";
+  if (/(descrip|detail|description)/.test(h)) return "description";
+  if (/(cantidad|stock|qty|quantity|existencia)/.test(h) && !/min/.test(h)) return "quantity";
+  if (/(precio|price|costo|valor unit)/.test(h) && !/total/.test(h)) return "unitPrice";
+  if (/(moneda|currency|divisa)/.test(h)) return "currency";
+  if (/(min|umbral|alerta cant)/.test(h)) return "minQuantity";
+  if (/(alerta|notif|alert)/.test(h)) return "alertEnabled";
+  if (/(ubicac|estanter|repisa|mueble|location|shelf)/.test(h) && !/detalle|detail/.test(h)) return "locationName";
+  if (/(detalle|detail|posicion|position)/.test(h)) return "locationDetail";
+  return "ignore";
+}
+
+function ImportExcelDialog({ onClose }: { onClose: () => void }) {
+  const inv = useInventory();
+  const [fileName, setFileName] = useState<string>("");
+  const [headers, setHeaders] = useState<string[]>([]);
+  const [rows, setRows] = useState<Record<string, unknown>[]>([]);
+  const [mapping, setMapping] = useState<Record<string, FieldKey | "ignore">>({});
+  const [warehouseId, setWarehouseId] = useState<string>(inv.warehouses[0]?.id ?? "");
+  const [defaultCurrency, setDefaultCurrency] = useState("MXN");
+  const [createMissingLocations, setCreateMissingLocations] = useState(true);
+
+  const onFile = async (file: File | null) => {
+    if (!file) return;
+    setFileName(file.name);
+    const buf = await file.arrayBuffer();
+    const wb = XLSX.read(buf, { type: "array" });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const json = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws, { defval: "" });
+    if (json.length === 0) {
+      toast.error("El archivo está vacío");
+      return;
+    }
+    const hdrs = Object.keys(json[0]);
+    setHeaders(hdrs);
+    setRows(json);
+    const guessed: Record<string, FieldKey | "ignore"> = {};
+    hdrs.forEach((h) => { guessed[h] = guessMapping(h); });
+    setMapping(guessed);
+  };
+
+  const downloadTemplate = () => {
+    const ws = XLSX.utils.aoa_to_sheet([
+      ["Nombre", "SKU", "Cantidad", "Precio unitario", "Moneda", "Cantidad mínima", "Alerta", "Ubicación", "Detalle ubicación"],
+      ["Audífonos Pro X", "AUD-001", 24, 1299, "MXN", 5, "sí", "Estantería A", "Repisa 1"],
+      ["Cargador USB-C", "CHR-030", 12, 349, "MXN", 10, "sí", "Estantería A", "Repisa 2"],
+    ]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Inventario");
+    XLSX.writeFile(wb, "plantilla-inventario.xlsx");
+  };
+
+  const requiredOk = (["name", "quantity", "unitPrice"] as FieldKey[]).every((k) => Object.values(mapping).includes(k));
+
+  const doImport = () => {
+    if (!warehouseId) { toast.error("Selecciona un inventario destino"); return; }
+    if (!requiredOk) { toast.error("Asigna al menos Nombre, Cantidad y Precio unitario"); return; }
+    const colFor = (k: FieldKey): string | undefined => Object.entries(mapping).find(([, v]) => v === k)?.[0];
+    const cName = colFor("name")!;
+    const cQty = colFor("quantity")!;
+    const cPrice = colFor("unitPrice")!;
+    const cSku = colFor("sku");
+    const cDesc = colFor("description");
+    const cCur = colFor("currency");
+    const cMin = colFor("minQuantity");
+    const cAlert = colFor("alertEnabled");
+    const cLoc = colFor("locationName");
+    const cLocD = colFor("locationDetail");
+
+    const existingLocs = inv.locations.filter((l) => l.warehouseId === warehouseId);
+    const locByKey = new Map(existingLocs.map((l) => [`${l.name.toLowerCase()}|${(l.detail ?? "").toLowerCase()}`, l.id]));
+
+    let added = 0, skipped = 0;
+    rows.forEach((r) => {
+      const name = String(r[cName] ?? "").trim();
+      if (!name) { skipped++; return; }
+      const quantity = Number(r[cQty] ?? 0) || 0;
+      const unitPrice = Number(r[cPrice] ?? 0) || 0;
+      let locationId: string | undefined;
+      if (cLoc) {
+        const lname = String(r[cLoc] ?? "").trim();
+        const ldet = cLocD ? String(r[cLocD] ?? "").trim() : "";
+        if (lname) {
+          const key = `${lname.toLowerCase()}|${ldet.toLowerCase()}`;
+          locationId = locByKey.get(key);
+          if (!locationId && createMissingLocations) {
+            locationId = inv.addLocation({ warehouseId, name: lname, detail: ldet || undefined });
+            locByKey.set(key, locationId);
+          }
+        }
+      }
+      const alertRaw = cAlert ? String(r[cAlert] ?? "").toLowerCase().trim() : "";
+      const alertEnabled = cAlert ? ["si", "sí", "yes", "true", "1", "x"].includes(alertRaw) : true;
+      inv.addItem({
+        name,
+        sku: cSku ? String(r[cSku] ?? "").trim() || undefined : undefined,
+        description: cDesc ? String(r[cDesc] ?? "").trim() || undefined : undefined,
+        warehouseId,
+        locationId,
+        quantity: Math.max(0, quantity),
+        unitPrice: Math.max(0, unitPrice),
+        currency: (cCur ? String(r[cCur] ?? "").trim().toUpperCase() : "") || defaultCurrency,
+        minQuantity: cMin ? Math.max(0, Number(r[cMin] ?? 0) || 0) : 5,
+        alertEnabled,
+      });
+      added++;
+    });
+    toast.success(`Importados ${added} productos${skipped ? ` · ${skipped} omitidos` : ""}`);
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4" onClick={onClose}>
+      <div className="w-full max-w-3xl rounded-2xl border bg-card p-5 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        <div className="mb-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <FileSpreadsheet className="h-5 w-5 text-primary" />
+            <h2 className="text-base font-semibold">Importar inventario desde Excel</h2>
+          </div>
+          <button onClick={onClose} className="grid h-8 w-8 place-items-center rounded-md text-muted-foreground hover:bg-muted">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="grid gap-4">
+          <div className="grid gap-3 md:grid-cols-3">
+            <Field label="Inventario destino">
+              <select className={inputCls} value={warehouseId} onChange={(e) => setWarehouseId(e.target.value)}>
+                {inv.warehouses.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}
+              </select>
+            </Field>
+            <Field label="Moneda por defecto">
+              <input className={inputCls} value={defaultCurrency} onChange={(e) => setDefaultCurrency(e.target.value.toUpperCase())} maxLength={3} />
+            </Field>
+            <label className="flex items-end gap-2 pb-1 text-sm">
+              <input type="checkbox" checked={createMissingLocations} onChange={(e) => setCreateMissingLocations(e.target.checked)} className="h-4 w-4" />
+              Crear ubicaciones faltantes
+            </label>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <label className="inline-flex h-10 cursor-pointer items-center gap-2 rounded-lg bg-[var(--gradient-brand)] px-4 text-sm font-medium text-primary-foreground shadow-[var(--shadow-pop)] hover:opacity-95">
+              <Upload className="h-4 w-4" />
+              {fileName ? "Cambiar archivo" : "Seleccionar archivo .xlsx / .csv"}
+              <input type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={(e) => onFile(e.target.files?.[0] ?? null)} />
+            </label>
+            <button onClick={downloadTemplate} className="inline-flex h-10 items-center gap-2 rounded-lg border bg-background px-3 text-sm hover:bg-muted">
+              <Download className="h-4 w-4" /> Plantilla
+            </button>
+            {fileName && <span className="text-sm text-muted-foreground">{fileName} · {rows.length} filas</span>}
+          </div>
+
+          {headers.length > 0 && (
+            <>
+              <div className="rounded-xl border">
+                <div className="border-b bg-muted/40 px-3 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Asignar columnas a campos
+                </div>
+                <div className="max-h-64 overflow-y-auto p-3">
+                  <div className="grid gap-2">
+                    {headers.map((h) => (
+                      <div key={h} className="grid grid-cols-2 items-center gap-3">
+                        <div className="truncate text-sm">
+                          <span className="font-medium">{h}</span>
+                          <span className="ml-2 text-xs text-muted-foreground truncate">ej: {String(rows[0]?.[h] ?? "")}</span>
+                        </div>
+                        <select
+                          value={mapping[h] ?? "ignore"}
+                          onChange={(e) => setMapping((m) => ({ ...m, [h]: e.target.value as FieldKey | "ignore" }))}
+                          className={inputCls}
+                        >
+                          {FIELD_OPTIONS.map((o) => (
+                            <option key={o.key} value={o.key}>{o.label}{o.required ? " *" : ""}</option>
+                          ))}
+                        </select>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              {!requiredOk && (
+                <div className="rounded-lg border border-warning/40 bg-warning/10 px-3 py-2 text-xs text-warning">
+                  Debes asignar al menos: <strong>Nombre</strong>, <strong>Cantidad</strong> y <strong>Precio unitario</strong>.
+                </div>
+              )}
+            </>
+          )}
+
+          <div className="mt-2 flex justify-end gap-2">
+            <button onClick={onClose} className="h-10 rounded-lg border bg-background px-4 text-sm font-medium hover:bg-muted">Cancelar</button>
+            <button
+              onClick={doImport}
+              disabled={!rows.length || !requiredOk}
+              className="h-10 rounded-lg bg-[var(--gradient-brand)] px-4 text-sm font-medium text-primary-foreground shadow-[var(--shadow-pop)] hover:opacity-95 disabled:opacity-50"
+            >
+              Importar {rows.length || ""} productos
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
