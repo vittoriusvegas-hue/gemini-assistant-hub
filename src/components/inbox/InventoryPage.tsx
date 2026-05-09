@@ -15,6 +15,7 @@ import {
   Layers,
   DollarSign,
   Minus,
+  ImagePlus,
 } from "lucide-react";
 import { useInventory, formatMoney, type InventoryItem, type Warehouse, type StorageLocation } from "@/lib/inventory-store";
 import { cn } from "@/lib/utils";
@@ -450,6 +451,48 @@ function Modal({ title, onClose, children }: { title: string; onClose: () => voi
 }
 
 const inputCls = "h-10 w-full rounded-lg border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/40";
+
+function ImagePicker({ value, onChange, label = "Imagen de referencia", aspect = "square" }: { value?: string; onChange: (v: string | undefined) => void; label?: string; aspect?: "square" | "wide" }) {
+  const onFile = (file: File | null) => {
+    if (!file) return;
+    if (file.size > 3 * 1024 * 1024) {
+      toast.error("Imagen demasiado grande (máx 3MB)");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => onChange(typeof reader.result === "string" ? reader.result : undefined);
+    reader.readAsDataURL(file);
+  };
+  return (
+    <div>
+      <span className="mb-1 block text-xs font-medium text-muted-foreground">{label}</span>
+      <label className={cn(
+        "group relative flex cursor-pointer items-center justify-center overflow-hidden rounded-xl border border-dashed bg-muted/30 transition hover:bg-muted/50",
+        aspect === "square" ? "aspect-square w-32" : "h-32 w-full",
+      )}>
+        {value ? (
+          <>
+            <img src={value} alt="" className="h-full w-full object-cover" />
+            <button
+              type="button"
+              onClick={(e) => { e.preventDefault(); onChange(undefined); }}
+              className="absolute right-1 top-1 grid h-6 w-6 place-items-center rounded-full bg-background/90 text-muted-foreground shadow hover:text-destructive"
+              aria-label="Quitar imagen"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </>
+        ) : (
+          <div className="flex flex-col items-center gap-1 px-2 py-3 text-center text-xs text-muted-foreground">
+            <ImagePlus className="h-5 w-5" />
+            <span>Subir imagen</span>
+          </div>
+        )}
+        <input type="file" accept="image/*" className="hidden" onChange={(e) => onFile(e.target.files?.[0] ?? null)} />
+      </label>
+    </div>
+  );
+}
 
 function ItemDialogForm({ dialog, onClose }: { dialog: NonNullable<ItemDialog>; onClose: () => void }) {
   const inv = useInventory();
