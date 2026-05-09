@@ -4,6 +4,7 @@ export interface Warehouse {
   id: string;
   name: string;
   address?: string;
+  imageUrl?: string;
   createdAt: number;
 }
 
@@ -14,6 +15,7 @@ export interface StorageLocation {
   name: string;
   /** Optional sub-position: "Fila 2 - Pos 3" */
   detail?: string;
+  imageUrl?: string;
 }
 
 export interface InventoryItem {
@@ -21,6 +23,7 @@ export interface InventoryItem {
   name: string;
   sku?: string;
   description?: string;
+  imageUrl?: string;
   warehouseId: string;
   locationId?: string;
   quantity: number;
@@ -60,11 +63,11 @@ interface State {
   locations: StorageLocation[];
   items: InventoryItem[];
   // Warehouses
-  addWarehouse: (input: { name: string; address?: string }) => string;
+  addWarehouse: (input: { name: string; address?: string; imageUrl?: string }) => string;
   updateWarehouse: (id: string, patch: Partial<Omit<Warehouse, "id" | "createdAt">>) => void;
   removeWarehouse: (id: string) => void;
   // Locations
-  addLocation: (input: { warehouseId: string; name: string; detail?: string }) => string;
+  addLocation: (input: { warehouseId: string; name: string; detail?: string; imageUrl?: string }) => string;
   updateLocation: (id: string, patch: Partial<Omit<StorageLocation, "id">>) => void;
   removeLocation: (id: string) => void;
   // Items
@@ -104,7 +107,7 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
 
   const addWarehouse: State["addWarehouse"] = useCallback((input) => {
     const id = "w-" + uid();
-    setWarehouses((p) => [...p, { id, name: input.name, address: input.address, createdAt: Date.now() }]);
+    setWarehouses((p) => [...p, { id, name: input.name, address: input.address, imageUrl: input.imageUrl, createdAt: Date.now() }]);
     return id;
   }, []);
   const updateWarehouse: State["updateWarehouse"] = useCallback((id, patch) => {

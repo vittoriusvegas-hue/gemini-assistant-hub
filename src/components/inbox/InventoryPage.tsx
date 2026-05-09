@@ -15,6 +15,7 @@ import {
   Layers,
   DollarSign,
   Minus,
+  ImagePlus,
 } from "lucide-react";
 import { useInventory, formatMoney, type InventoryItem, type Warehouse, type StorageLocation } from "@/lib/inventory-store";
 import { cn } from "@/lib/utils";
@@ -173,9 +174,13 @@ export function InventoryPage() {
                       <tr key={it.id} className={cn("border-t hover:bg-muted/40", isLow && "bg-warning/5")}>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-3">
-                            <div className="grid h-9 w-9 place-items-center rounded-lg bg-primary-soft text-primary">
-                              <Package className="h-4 w-4" />
-                            </div>
+                            {it.imageUrl ? (
+                              <img src={it.imageUrl} alt={it.name} className="h-9 w-9 rounded-lg object-cover" />
+                            ) : (
+                              <div className="grid h-9 w-9 place-items-center rounded-lg bg-primary-soft text-primary">
+                                <Package className="h-4 w-4" />
+                              </div>
+                            )}
                             <div className="min-w-0">
                               <div className="font-medium">{it.name}</div>
                               {it.sku && <div className="text-xs text-muted-foreground">SKU: {it.sku}</div>}
@@ -290,6 +295,11 @@ export function InventoryPage() {
               const value = itemsHere.reduce((s, i) => s + i.quantity * i.unitPrice, 0);
               return (
                 <div key={w.id} className="rounded-2xl border bg-card p-5 shadow-[var(--shadow-soft)]">
+                  {w.imageUrl && (
+                    <div className="mb-4 -mx-5 -mt-5 h-32 overflow-hidden rounded-t-2xl bg-muted">
+                      <img src={w.imageUrl} alt={w.name} className="h-full w-full object-cover" />
+                    </div>
+                  )}
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-3">
                       <div className="grid h-10 w-10 place-items-center rounded-xl bg-primary-soft text-primary">
@@ -350,7 +360,11 @@ export function InventoryPage() {
                       {locs.length === 0 && <span className="text-xs text-muted-foreground">Sin ubicaciones definidas</span>}
                       {locs.map((l) => (
                         <span key={l.id} className="group inline-flex items-center gap-1 rounded-md border bg-background px-2 py-1 text-xs">
-                          <MapPin className="h-3 w-3 text-muted-foreground" />
+                          {l.imageUrl ? (
+                            <img src={l.imageUrl} alt="" className="h-4 w-4 rounded object-cover" />
+                          ) : (
+                            <MapPin className="h-3 w-3 text-muted-foreground" />
+                          )}
                           {l.name}{l.detail ? ` · ${l.detail}` : ""}
                           <button
                             onClick={() => setLocDialog({ mode: "edit", location: l })}
@@ -451,6 +465,48 @@ function Modal({ title, onClose, children }: { title: string; onClose: () => voi
 
 const inputCls = "h-10 w-full rounded-lg border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/40";
 
+function ImagePicker({ value, onChange, label = "Imagen de referencia", aspect = "square" }: { value?: string; onChange: (v: string | undefined) => void; label?: string; aspect?: "square" | "wide" }) {
+  const onFile = (file: File | null) => {
+    if (!file) return;
+    if (file.size > 3 * 1024 * 1024) {
+      toast.error("Imagen demasiado grande (máx 3MB)");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => onChange(typeof reader.result === "string" ? reader.result : undefined);
+    reader.readAsDataURL(file);
+  };
+  return (
+    <div>
+      <span className="mb-1 block text-xs font-medium text-muted-foreground">{label}</span>
+      <label className={cn(
+        "group relative flex cursor-pointer items-center justify-center overflow-hidden rounded-xl border border-dashed bg-muted/30 transition hover:bg-muted/50",
+        aspect === "square" ? "aspect-square w-32" : "h-32 w-full",
+      )}>
+        {value ? (
+          <>
+            <img src={value} alt="" className="h-full w-full object-cover" />
+            <button
+              type="button"
+              onClick={(e) => { e.preventDefault(); onChange(undefined); }}
+              className="absolute right-1 top-1 grid h-6 w-6 place-items-center rounded-full bg-background/90 text-muted-foreground shadow hover:text-destructive"
+              aria-label="Quitar imagen"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </>
+        ) : (
+          <div className="flex flex-col items-center gap-1 px-2 py-3 text-center text-xs text-muted-foreground">
+            <ImagePlus className="h-5 w-5" />
+            <span>Subir imagen</span>
+          </div>
+        )}
+        <input type="file" accept="image/*" className="hidden" onChange={(e) => onFile(e.target.files?.[0] ?? null)} />
+      </label>
+    </div>
+  );
+}
+
 function ItemDialogForm({ dialog, onClose }: { dialog: NonNullable<ItemDialog>; onClose: () => void }) {
   const inv = useInventory();
   const editing = dialog.mode === "edit" ? dialog.item : null;
@@ -463,6 +519,7 @@ function ItemDialogForm({ dialog, onClose }: { dialog: NonNullable<ItemDialog>; 
   const [currency, setCurrency] = useState(editing?.currency ?? "MXN");
   const [minQuantity, setMinQuantity] = useState(editing?.minQuantity ?? 5);
   const [alertEnabled, setAlertEnabled] = useState(editing?.alertEnabled ?? true);
+  const [imageUrl, setImageUrl] = useState<string | undefined>(editing?.imageUrl);
 
   const locs = inv.locations.filter((l) => l.warehouseId === warehouseId);
 
@@ -472,6 +529,7 @@ function ItemDialogForm({ dialog, onClose }: { dialog: NonNullable<ItemDialog>; 
     const payload = {
       name: name.trim(),
       sku: sku.trim() || undefined,
+      imageUrl,
       warehouseId,
       locationId: locationId || undefined,
       quantity: Math.max(0, Number(quantity) || 0),
@@ -493,7 +551,12 @@ function ItemDialogForm({ dialog, onClose }: { dialog: NonNullable<ItemDialog>; 
   return (
     <Modal title={editing ? "Editar producto" : "Nuevo producto"} onClose={onClose}>
       <form onSubmit={submit} className="grid gap-3">
-        <Field label="Nombre"><input className={inputCls} value={name} onChange={(e) => setName(e.target.value)} required /></Field>
+        <div className="flex items-start gap-3">
+          <ImagePicker value={imageUrl} onChange={setImageUrl} label="Imagen del producto" />
+          <div className="flex-1">
+            <Field label="Nombre"><input className={inputCls} value={name} onChange={(e) => setName(e.target.value)} required /></Field>
+          </div>
+        </div>
         <div className="grid grid-cols-2 gap-3">
           <Field label="SKU (opcional)"><input className={inputCls} value={sku} onChange={(e) => setSku(e.target.value)} /></Field>
           <Field label="Moneda"><input className={inputCls} value={currency} onChange={(e) => setCurrency(e.target.value.toUpperCase())} maxLength={3} /></Field>
@@ -548,15 +611,16 @@ function WarehouseDialogForm({ dialog, onClose }: { dialog: NonNullable<Warehous
   const editing = dialog.mode === "edit" ? dialog.warehouse : null;
   const [name, setName] = useState(editing?.name ?? "");
   const [address, setAddress] = useState(editing?.address ?? "");
+  const [imageUrl, setImageUrl] = useState<string | undefined>(editing?.imageUrl);
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
     if (editing) {
-      inv.updateWarehouse(editing.id, { name: name.trim(), address: address.trim() || undefined });
+      inv.updateWarehouse(editing.id, { name: name.trim(), address: address.trim() || undefined, imageUrl });
       toast.success("Inventario actualizado");
     } else {
-      inv.addWarehouse({ name: name.trim(), address: address.trim() || undefined });
+      inv.addWarehouse({ name: name.trim(), address: address.trim() || undefined, imageUrl });
       toast.success("Inventario creado");
     }
     onClose();
@@ -565,6 +629,7 @@ function WarehouseDialogForm({ dialog, onClose }: { dialog: NonNullable<Warehous
   return (
     <Modal title={editing ? "Editar inventario" : "Nuevo inventario / local"} onClose={onClose}>
       <form onSubmit={submit} className="grid gap-3">
+        <ImagePicker value={imageUrl} onChange={setImageUrl} label="Foto del local (opcional)" aspect="wide" />
         <Field label="Nombre del local o bodega"><input className={inputCls} value={name} onChange={(e) => setName(e.target.value)} required placeholder="Ej. Bodega Central" /></Field>
         <Field label="Dirección (opcional)"><input className={inputCls} value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Av. Principal 123" /></Field>
         <div className="mt-2 flex justify-end gap-2">
@@ -584,15 +649,16 @@ function LocationDialogForm({ dialog, onClose }: { dialog: NonNullable<LocationD
   const [warehouseId, setWarehouseId] = useState(editing?.warehouseId ?? (dialog.mode === "new" ? dialog.warehouseId ?? inv.warehouses[0]?.id ?? "" : ""));
   const [name, setName] = useState(editing?.name ?? "");
   const [detail, setDetail] = useState(editing?.detail ?? "");
+  const [imageUrl, setImageUrl] = useState<string | undefined>(editing?.imageUrl);
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !warehouseId) return;
     if (editing) {
-      inv.updateLocation(editing.id, { warehouseId, name: name.trim(), detail: detail.trim() || undefined });
+      inv.updateLocation(editing.id, { warehouseId, name: name.trim(), detail: detail.trim() || undefined, imageUrl });
       toast.success("Ubicación actualizada");
     } else {
-      inv.addLocation({ warehouseId, name: name.trim(), detail: detail.trim() || undefined });
+      inv.addLocation({ warehouseId, name: name.trim(), detail: detail.trim() || undefined, imageUrl });
       toast.success("Ubicación añadida");
     }
     onClose();
@@ -601,12 +667,17 @@ function LocationDialogForm({ dialog, onClose }: { dialog: NonNullable<LocationD
   return (
     <Modal title={editing ? "Editar ubicación" : "Nueva ubicación"} onClose={onClose}>
       <form onSubmit={submit} className="grid gap-3">
+        <div className="flex items-start gap-3">
+          <ImagePicker value={imageUrl} onChange={setImageUrl} label="Foto de referencia" />
+          <div className="flex-1 space-y-3">
         <Field label="Inventario">
           <select className={inputCls} value={warehouseId} onChange={(e) => setWarehouseId(e.target.value)} required>
             {inv.warehouses.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}
           </select>
         </Field>
         <Field label="Nombre (estantería, mueble, repisa…)"><input className={inputCls} value={name} onChange={(e) => setName(e.target.value)} required placeholder="Ej. Estantería A" /></Field>
+          </div>
+        </div>
         <Field label="Detalle (opcional)"><input className={inputCls} value={detail} onChange={(e) => setDetail(e.target.value)} placeholder="Ej. Repisa 2, Cajón superior" /></Field>
         <div className="mt-2 flex justify-end gap-2">
           <button type="button" onClick={onClose} className="h-10 rounded-lg border bg-background px-4 text-sm font-medium hover:bg-muted">Cancelar</button>
