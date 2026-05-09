@@ -4,6 +4,7 @@ export interface Warehouse {
   id: string;
   name: string;
   address?: string;
+  imageUrl?: string;
   createdAt: number;
 }
 
@@ -14,6 +15,7 @@ export interface StorageLocation {
   name: string;
   /** Optional sub-position: "Fila 2 - Pos 3" */
   detail?: string;
+  imageUrl?: string;
 }
 
 export interface InventoryItem {
@@ -21,6 +23,7 @@ export interface InventoryItem {
   name: string;
   sku?: string;
   description?: string;
+  imageUrl?: string;
   warehouseId: string;
   locationId?: string;
   quantity: number;
