@@ -506,6 +506,7 @@ function ItemDialogForm({ dialog, onClose }: { dialog: NonNullable<ItemDialog>; 
   const [currency, setCurrency] = useState(editing?.currency ?? "MXN");
   const [minQuantity, setMinQuantity] = useState(editing?.minQuantity ?? 5);
   const [alertEnabled, setAlertEnabled] = useState(editing?.alertEnabled ?? true);
+  const [imageUrl, setImageUrl] = useState<string | undefined>(editing?.imageUrl);
 
   const locs = inv.locations.filter((l) => l.warehouseId === warehouseId);
 
@@ -515,6 +516,7 @@ function ItemDialogForm({ dialog, onClose }: { dialog: NonNullable<ItemDialog>; 
     const payload = {
       name: name.trim(),
       sku: sku.trim() || undefined,
+      imageUrl,
       warehouseId,
       locationId: locationId || undefined,
       quantity: Math.max(0, Number(quantity) || 0),
@@ -536,7 +538,12 @@ function ItemDialogForm({ dialog, onClose }: { dialog: NonNullable<ItemDialog>; 
   return (
     <Modal title={editing ? "Editar producto" : "Nuevo producto"} onClose={onClose}>
       <form onSubmit={submit} className="grid gap-3">
-        <Field label="Nombre"><input className={inputCls} value={name} onChange={(e) => setName(e.target.value)} required /></Field>
+        <div className="flex items-start gap-3">
+          <ImagePicker value={imageUrl} onChange={setImageUrl} label="Imagen del producto" />
+          <div className="flex-1">
+            <Field label="Nombre"><input className={inputCls} value={name} onChange={(e) => setName(e.target.value)} required /></Field>
+          </div>
+        </div>
         <div className="grid grid-cols-2 gap-3">
           <Field label="SKU (opcional)"><input className={inputCls} value={sku} onChange={(e) => setSku(e.target.value)} /></Field>
           <Field label="Moneda"><input className={inputCls} value={currency} onChange={(e) => setCurrency(e.target.value.toUpperCase())} maxLength={3} /></Field>
