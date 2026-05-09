@@ -291,6 +291,11 @@ export function InventoryPage() {
               const value = itemsHere.reduce((s, i) => s + i.quantity * i.unitPrice, 0);
               return (
                 <div key={w.id} className="rounded-2xl border bg-card p-5 shadow-[var(--shadow-soft)]">
+                  {w.imageUrl && (
+                    <div className="mb-4 -mx-5 -mt-5 h-32 overflow-hidden rounded-t-2xl bg-muted">
+                      <img src={w.imageUrl} alt={w.name} className="h-full w-full object-cover" />
+                    </div>
+                  )}
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-3">
                       <div className="grid h-10 w-10 place-items-center rounded-xl bg-primary-soft text-primary">
@@ -351,7 +356,11 @@ export function InventoryPage() {
                       {locs.length === 0 && <span className="text-xs text-muted-foreground">Sin ubicaciones definidas</span>}
                       {locs.map((l) => (
                         <span key={l.id} className="group inline-flex items-center gap-1 rounded-md border bg-background px-2 py-1 text-xs">
-                          <MapPin className="h-3 w-3 text-muted-foreground" />
+                          {l.imageUrl ? (
+                            <img src={l.imageUrl} alt="" className="h-4 w-4 rounded object-cover" />
+                          ) : (
+                            <MapPin className="h-3 w-3 text-muted-foreground" />
+                          )}
                           {l.name}{l.detail ? ` · ${l.detail}` : ""}
                           <button
                             onClick={() => setLocDialog({ mode: "edit", location: l })}
