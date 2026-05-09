@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { InboxProvider } from "@/lib/inbox-store";
 import { AuthProvider, useAuth } from "@/lib/auth-store";
 import { UsersProvider } from "@/lib/users-store";
+import { InventoryProvider } from "@/lib/inventory-store";
 import { LoginScreen } from "@/components/inbox/LoginScreen";
 import { MobileNav } from "@/components/inbox/MobileNav";
 
@@ -83,8 +84,10 @@ function AuthGate() {
   return (
     <UsersProvider>
       <InboxProvider>
-        <Outlet />
-        <MobileNav />
+        <InventoryProvider>
+          <Outlet />
+          <MobileNav />
+        </InventoryProvider>
       </InboxProvider>
     </UsersProvider>
   );
