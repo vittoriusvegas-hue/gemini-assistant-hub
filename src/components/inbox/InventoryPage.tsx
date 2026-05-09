@@ -598,15 +598,16 @@ function WarehouseDialogForm({ dialog, onClose }: { dialog: NonNullable<Warehous
   const editing = dialog.mode === "edit" ? dialog.warehouse : null;
   const [name, setName] = useState(editing?.name ?? "");
   const [address, setAddress] = useState(editing?.address ?? "");
+  const [imageUrl, setImageUrl] = useState<string | undefined>(editing?.imageUrl);
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
     if (editing) {
-      inv.updateWarehouse(editing.id, { name: name.trim(), address: address.trim() || undefined });
+      inv.updateWarehouse(editing.id, { name: name.trim(), address: address.trim() || undefined, imageUrl });
       toast.success("Inventario actualizado");
     } else {
-      inv.addWarehouse({ name: name.trim(), address: address.trim() || undefined });
+      inv.addWarehouse({ name: name.trim(), address: address.trim() || undefined, imageUrl });
       toast.success("Inventario creado");
     }
     onClose();
@@ -615,6 +616,7 @@ function WarehouseDialogForm({ dialog, onClose }: { dialog: NonNullable<Warehous
   return (
     <Modal title={editing ? "Editar inventario" : "Nuevo inventario / local"} onClose={onClose}>
       <form onSubmit={submit} className="grid gap-3">
+        <ImagePicker value={imageUrl} onChange={setImageUrl} label="Foto del local (opcional)" aspect="wide" />
         <Field label="Nombre del local o bodega"><input className={inputCls} value={name} onChange={(e) => setName(e.target.value)} required placeholder="Ej. Bodega Central" /></Field>
         <Field label="Dirección (opcional)"><input className={inputCls} value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Av. Principal 123" /></Field>
         <div className="mt-2 flex justify-end gap-2">
@@ -634,15 +636,16 @@ function LocationDialogForm({ dialog, onClose }: { dialog: NonNullable<LocationD
   const [warehouseId, setWarehouseId] = useState(editing?.warehouseId ?? (dialog.mode === "new" ? dialog.warehouseId ?? inv.warehouses[0]?.id ?? "" : ""));
   const [name, setName] = useState(editing?.name ?? "");
   const [detail, setDetail] = useState(editing?.detail ?? "");
+  const [imageUrl, setImageUrl] = useState<string | undefined>(editing?.imageUrl);
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !warehouseId) return;
     if (editing) {
-      inv.updateLocation(editing.id, { warehouseId, name: name.trim(), detail: detail.trim() || undefined });
+      inv.updateLocation(editing.id, { warehouseId, name: name.trim(), detail: detail.trim() || undefined, imageUrl });
       toast.success("Ubicación actualizada");
     } else {
-      inv.addLocation({ warehouseId, name: name.trim(), detail: detail.trim() || undefined });
+      inv.addLocation({ warehouseId, name: name.trim(), detail: detail.trim() || undefined, imageUrl });
       toast.success("Ubicación añadida");
     }
     onClose();
@@ -651,12 +654,17 @@ function LocationDialogForm({ dialog, onClose }: { dialog: NonNullable<LocationD
   return (
     <Modal title={editing ? "Editar ubicación" : "Nueva ubicación"} onClose={onClose}>
       <form onSubmit={submit} className="grid gap-3">
+        <div className="flex items-start gap-3">
+          <ImagePicker value={imageUrl} onChange={setImageUrl} label="Foto de referencia" />
+          <div className="flex-1 space-y-3">
         <Field label="Inventario">
           <select className={inputCls} value={warehouseId} onChange={(e) => setWarehouseId(e.target.value)} required>
             {inv.warehouses.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}
           </select>
         </Field>
         <Field label="Nombre (estantería, mueble, repisa…)"><input className={inputCls} value={name} onChange={(e) => setName(e.target.value)} required placeholder="Ej. Estantería A" /></Field>
+          </div>
+        </div>
         <Field label="Detalle (opcional)"><input className={inputCls} value={detail} onChange={(e) => setDetail(e.target.value)} placeholder="Ej. Repisa 2, Cajón superior" /></Field>
         <div className="mt-2 flex justify-end gap-2">
           <button type="button" onClick={onClose} className="h-10 rounded-lg border bg-background px-4 text-sm font-medium hover:bg-muted">Cancelar</button>
