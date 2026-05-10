@@ -526,7 +526,7 @@ function DealDetail({ deal, onClose, isAdmin, onDelete }: { deal: Deal; onClose:
 
           {/* Comments */}
           <Section title="Comentarios" count={deal.comments.length}>
-            {/* placeholder to keep diff anchor stable */}
+            {/* anchor */}
             <div className="flex flex-col gap-2">
               {deal.comments.map((c) => (
                 <div key={c.id} className="rounded-lg border bg-card p-3">
