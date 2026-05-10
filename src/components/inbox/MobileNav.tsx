@@ -1,5 +1,5 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { Bot, Inbox, Users, Settings, BarChart3, Trello } from "lucide-react";
+import { Bot, Inbox, Users, Settings, BarChart3, Trello, Briefcase } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUsers, type FeatureKey } from "@/lib/users-store";
 
@@ -7,6 +7,7 @@ const items: { to: string; label: string; icon: typeof Inbox; feature: FeatureKe
   { to: "/", label: "Bandeja", icon: Inbox, feature: "inbox" },
   { to: "/sales", label: "Ventas", icon: Trello, feature: "sales" },
   { to: "/contacts", label: "Contactos", icon: Users, feature: "contacts" },
+  { to: "/services", label: "Servicios", icon: Briefcase, feature: "services" },
   { to: "/bot", label: "Bot", icon: Bot, feature: "bot" },
   { to: "/analytics", label: "Métricas", icon: BarChart3, feature: "analytics" },
   { to: "/settings", label: "Ajustes", icon: Settings, feature: "settings" },
