@@ -997,3 +997,247 @@ function ColorPicker({ value, onChange }: { value: string; onChange: (v: string)
     </div>
   );
 }
+
+function LinkedInventorySection({ deal }: { deal: Deal }) {
+  const inv = useInventory();
+  const { updateDeal } = useInbox();
+  const linked = deal.linkedInventory ?? [];
+  const [picker, setPicker] = useState(false);
+
+  const total = linked.reduce((s, l) => {
+    const it = inv.items.find((i) => i.id === l.itemId);
+    return s + (it ? it.unitPrice * l.quantity : 0);
+  }, 0);
+
+  const setLinked = (next: { itemId: string; quantity: number }[]) =>
+    updateDeal(deal.id, { linkedInventory: next });
+
+  const updateQty = (itemId: string, qty: number) => {
+    if (qty <= 0) return setLinked(linked.filter((l) => l.itemId !== itemId));
+    setLinked(linked.map((l) => (l.itemId === itemId ? { ...l, quantity: qty } : l)));
+  };
+  const addItem = (itemId: string) => {
+    if (linked.some((l) => l.itemId === itemId)) {
+      updateQty(itemId, (linked.find((l) => l.itemId === itemId)?.quantity ?? 0) + 1);
+    } else {
+      setLinked([...linked, { itemId, quantity: 1 }]);
+    }
+    setPicker(false);
+    toast.success("Producto añadido");
+  };
+
+  const useAsAmount = () => {
+    updateDeal(deal.id, { amount: Math.round(total) });
+    toast.success("Monto actualizado");
+  };
+
+  const available = inv.items.filter((i) => !linked.some((l) => l.itemId === i.id));
+
+  return (
+    <Section
+      title="Productos del inventario"
+      count={linked.length}
+      hint="Lo que el cliente quiere comprar"
+      action={
+        <div className="relative flex items-center gap-2">
+          {linked.length > 0 && (
+            <button onClick={useAsAmount} className="rounded-md border px-2 py-1 text-[11px] font-medium hover:bg-muted">
+              Usar total ({fmtInv(total)})
+            </button>
+          )}
+          <button
+            onClick={() => setPicker((v) => !v)}
+            className="inline-flex items-center gap-1 rounded-md bg-primary-soft px-2 py-1 text-[11px] font-medium text-primary hover:bg-primary/15"
+          >
+            <Plus className="h-3 w-3" /> Añadir
+          </button>
+          {picker && (
+            <>
+              <div className="fixed inset-0 z-10" onClick={() => setPicker(false)} />
+              <div className="absolute right-0 top-full z-20 mt-1 max-h-72 w-72 overflow-y-auto rounded-lg border bg-popover p-1 shadow-xl">
+                {available.length === 0 && <div className="px-2 py-3 text-center text-xs text-muted-foreground">Sin productos disponibles</div>}
+                {available.map((it) => (
+                  <button
+                    key={it.id}
+                    onClick={() => addItem(it.id)}
+                    className="flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-muted"
+                  >
+                    <div className="min-w-0">
+                      <div className="truncate font-medium">{it.name}</div>
+                      <div className="text-[10px] text-muted-foreground">Stock: {it.quantity} · {fmtInv(it.unitPrice, it.currency)}</div>
+                    </div>
+                    <Package className="h-3.5 w-3.5 text-muted-foreground" />
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      }
+    >
+      {linked.length === 0 ? (
+        <Empty>Aún no hay productos asignados a esta oportunidad.</Empty>
+      ) : (
+        <div className="space-y-2">
+          {linked.map((l) => {
+            const it = inv.items.find((i) => i.id === l.itemId);
+            if (!it) return (
+              <div key={l.itemId} className="flex items-center justify-between rounded-lg border bg-card px-3 py-2 text-xs text-muted-foreground">
+                Producto eliminado
+                <button onClick={() => updateQty(l.itemId, 0)} className="text-destructive"><Trash2 className="h-3.5 w-3.5" /></button>
+              </div>
+            );
+            return (
+              <div key={l.itemId} className="flex items-center gap-2 rounded-lg border bg-card p-2.5">
+                <div className="grid h-9 w-9 place-items-center rounded-md bg-primary-soft text-primary"><Package className="h-4 w-4" /></div>
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-sm font-medium">{it.name}</div>
+                  <div className="text-[11px] text-muted-foreground">{fmtInv(it.unitPrice, it.currency)} c/u · Stock {it.quantity}</div>
+                </div>
+                <div className="flex items-center gap-1">
+                  <button onClick={() => updateQty(l.itemId, l.quantity - 1)} className="grid h-7 w-7 place-items-center rounded-md border hover:bg-muted"><Minus className="h-3 w-3" /></button>
+                  <input
+                    type="number"
+                    min={1}
+                    value={l.quantity}
+                    onChange={(e) => updateQty(l.itemId, Math.max(0, Number(e.target.value) || 0))}
+                    className="h-7 w-12 rounded-md border bg-background text-center text-xs"
+                  />
+                  <button onClick={() => updateQty(l.itemId, l.quantity + 1)} className="grid h-7 w-7 place-items-center rounded-md border hover:bg-muted"><Plus className="h-3 w-3" /></button>
+                </div>
+                <div className="w-20 text-right text-sm font-semibold tabular-nums">{fmtInv(it.unitPrice * l.quantity, it.currency)}</div>
+                <button onClick={() => updateQty(l.itemId, 0)} className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground hover:bg-destructive/10 hover:text-destructive"><Trash2 className="h-3.5 w-3.5" /></button>
+              </div>
+            );
+          })}
+          <div className="flex items-center justify-end gap-2 pt-1 text-sm">
+            <span className="text-muted-foreground">Subtotal productos:</span>
+            <span className="font-bold tabular-nums">{fmtInv(total)}</span>
+          </div>
+        </div>
+      )}
+    </Section>
+  );
+}
+
+function LinkedServicesSection({ deal }: { deal: Deal }) {
+  const svc = useServices();
+  const { updateDeal } = useInbox();
+  const linked = deal.linkedServices ?? [];
+  const [picker, setPicker] = useState(false);
+
+  const total = linked.reduce((s, l) => {
+    const sv = svc.services.find((x) => x.id === l.serviceId);
+    return s + (sv ? sv.basePrice * l.units : 0);
+  }, 0);
+
+  const setLinked = (next: { serviceId: string; units: number }[]) =>
+    updateDeal(deal.id, { linkedServices: next });
+
+  const updateUnits = (serviceId: string, units: number) => {
+    if (units <= 0) return setLinked(linked.filter((l) => l.serviceId !== serviceId));
+    setLinked(linked.map((l) => (l.serviceId === serviceId ? { ...l, units } : l)));
+  };
+  const addService = (serviceId: string) => {
+    if (linked.some((l) => l.serviceId === serviceId)) {
+      updateUnits(serviceId, (linked.find((l) => l.serviceId === serviceId)?.units ?? 0) + 1);
+    } else {
+      setLinked([...linked, { serviceId, units: 1 }]);
+    }
+    setPicker(false);
+    toast.success("Servicio añadido");
+  };
+
+  const useAsAmount = () => {
+    updateDeal(deal.id, { amount: Math.round(total) });
+    toast.success("Monto actualizado");
+  };
+
+  const available = svc.services.filter((s) => s.active && !linked.some((l) => l.serviceId === s.id));
+
+  return (
+    <Section
+      title="Servicios solicitados"
+      count={linked.length}
+      hint="Servicios que el prospecto quiere contratar"
+      action={
+        <div className="relative flex items-center gap-2">
+          {linked.length > 0 && (
+            <button onClick={useAsAmount} className="rounded-md border px-2 py-1 text-[11px] font-medium hover:bg-muted">
+              Usar total ({fmtSvc(total)})
+            </button>
+          )}
+          <button
+            onClick={() => setPicker((v) => !v)}
+            className="inline-flex items-center gap-1 rounded-md bg-primary-soft px-2 py-1 text-[11px] font-medium text-primary hover:bg-primary/15"
+          >
+            <Plus className="h-3 w-3" /> Añadir
+          </button>
+          {picker && (
+            <>
+              <div className="fixed inset-0 z-10" onClick={() => setPicker(false)} />
+              <div className="absolute right-0 top-full z-20 mt-1 max-h-72 w-72 overflow-y-auto rounded-lg border bg-popover p-1 shadow-xl">
+                {available.length === 0 && <div className="px-2 py-3 text-center text-xs text-muted-foreground">Sin servicios disponibles</div>}
+                {available.map((s) => (
+                  <button
+                    key={s.id}
+                    onClick={() => addService(s.id)}
+                    className="flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-muted"
+                  >
+                    <div className="min-w-0">
+                      <div className="truncate font-medium">{s.name}</div>
+                      <div className="text-[10px] text-muted-foreground">{fmtSvc(s.basePrice, s.currency)} · {PRICING_LABELS[s.pricingMode]}</div>
+                    </div>
+                    <Briefcase className="h-3.5 w-3.5 text-muted-foreground" />
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      }
+    >
+      {linked.length === 0 ? (
+        <Empty>Aún no hay servicios asignados a esta oportunidad.</Empty>
+      ) : (
+        <div className="space-y-2">
+          {linked.map((l) => {
+            const sv = svc.services.find((x) => x.id === l.serviceId);
+            if (!sv) return (
+              <div key={l.serviceId} className="flex items-center justify-between rounded-lg border bg-card px-3 py-2 text-xs text-muted-foreground">
+                Servicio eliminado
+                <button onClick={() => updateUnits(l.serviceId, 0)} className="text-destructive"><Trash2 className="h-3.5 w-3.5" /></button>
+              </div>
+            );
+            return (
+              <div key={l.serviceId} className="flex items-center gap-2 rounded-lg border bg-card p-2.5">
+                <div className="grid h-9 w-9 place-items-center rounded-md bg-primary-soft text-primary"><Briefcase className="h-4 w-4" /></div>
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-sm font-medium">{sv.name}</div>
+                  <div className="text-[11px] text-muted-foreground">{fmtSvc(sv.basePrice, sv.currency)} · {PRICING_LABELS[sv.pricingMode]}</div>
+                </div>
+                <div className="flex items-center gap-1">
+                  <button onClick={() => updateUnits(l.serviceId, l.units - 1)} className="grid h-7 w-7 place-items-center rounded-md border hover:bg-muted"><Minus className="h-3 w-3" /></button>
+                  <input
+                    type="number"
+                    min={1}
+                    value={l.units}
+                    onChange={(e) => updateUnits(l.serviceId, Math.max(0, Number(e.target.value) || 0))}
+                    className="h-7 w-12 rounded-md border bg-background text-center text-xs"
+                  />
+                  <button onClick={() => updateUnits(l.serviceId, l.units + 1)} className="grid h-7 w-7 place-items-center rounded-md border hover:bg-muted"><Plus className="h-3 w-3" /></button>
+                </div>
+                <div className="w-20 text-right text-sm font-semibold tabular-nums">{fmtSvc(sv.basePrice * l.units, sv.currency)}</div>
+                <button onClick={() => updateUnits(l.serviceId, 0)} className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground hover:bg-destructive/10 hover:text-destructive"><Trash2 className="h-3.5 w-3.5" /></button>
+              </div>
+            );
+          })}
+          <div className="flex items-center justify-end gap-2 pt-1 text-sm">
+            <span className="text-muted-foreground">Subtotal servicios:</span>
+            <span className="font-bold tabular-nums">{fmtSvc(total)}</span>
+          </div>
+        </div>
+      )}
+    </Section>
+  );
+}
