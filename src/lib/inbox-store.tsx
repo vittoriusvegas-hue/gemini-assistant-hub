@@ -410,6 +410,8 @@ export function InboxProvider({ children }: { children: ReactNode }) {
       tags: [],
       attachments: [],
       comments: [],
+      linkedInventory: [],
+      linkedServices: [],
       createdAt: Date.now(),
       updatedAt: Date.now(),
     };
