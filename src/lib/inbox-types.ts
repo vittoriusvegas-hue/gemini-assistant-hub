@@ -187,9 +187,9 @@ export interface Deal {
   attachments: Attachment[];
   comments: DealComment[];
   /** Productos del inventario asignados a la oportunidad */
-  linkedInventory: { itemId: string; quantity: number }[];
+  linkedInventory?: { itemId: string; quantity: number }[];
   /** Servicios del catálogo asignados a la oportunidad */
-  linkedServices: { serviceId: string; units: number }[];
+  linkedServices?: { serviceId: string; units: number }[];
   createdAt: number;
   updatedAt: number;
 }
