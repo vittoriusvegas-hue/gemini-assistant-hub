@@ -524,6 +524,10 @@ function DealDetail({ deal, onClose, isAdmin, onDelete }: { deal: Deal; onClose:
             )}
           </Section>
 
+          {/* Linked products + services */}
+          <LinkedInventorySection deal={deal} />
+          <LinkedServicesSection deal={deal} />
+
           {/* Comments */}
           <Section title="Comentarios" count={deal.comments.length}>
             {/* anchor */}
