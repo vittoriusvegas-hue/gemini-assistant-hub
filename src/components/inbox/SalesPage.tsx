@@ -21,10 +21,13 @@ import {
   ArrowUp,
   ArrowDown,
 } from "lucide-react";
+import { Package, Briefcase, Minus } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
 import { useInbox } from "@/lib/inbox-store";
 import { type Attachment, type Deal, type DealStage, type PipelineStage } from "@/lib/inbox-types";
+import { useInventory, formatMoney as fmtInv } from "@/lib/inventory-store";
+import { useServices, PRICING_LABELS, formatMoney as fmtSvc } from "@/lib/services-store";
 import { ContactAvatar } from "./Avatar";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-store";
