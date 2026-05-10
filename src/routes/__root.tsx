@@ -6,6 +6,7 @@ import { InboxProvider } from "@/lib/inbox-store";
 import { AuthProvider, useAuth } from "@/lib/auth-store";
 import { UsersProvider } from "@/lib/users-store";
 import { InventoryProvider } from "@/lib/inventory-store";
+import { ServicesProvider } from "@/lib/services-store";
 import { LoginScreen } from "@/components/inbox/LoginScreen";
 import { MobileNav } from "@/components/inbox/MobileNav";
 
@@ -85,8 +86,10 @@ function AuthGate() {
     <UsersProvider>
       <InboxProvider>
         <InventoryProvider>
-          <Outlet />
-          <MobileNav />
+          <ServicesProvider>
+            <Outlet />
+            <MobileNav />
+          </ServicesProvider>
         </InventoryProvider>
       </InboxProvider>
     </UsersProvider>
