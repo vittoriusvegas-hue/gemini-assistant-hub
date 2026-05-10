@@ -54,7 +54,7 @@ interface InboxState {
   selectedDealId: string | null;
   selectDeal: (id: string | null) => void;
   moveDeal: (dealId: string, stage: DealStage) => void;
-  updateDeal: (dealId: string, patch: Partial<Pick<Deal, "title" | "amount" | "currency" | "probability" | "expectedCloseAt" | "owner" | "tags">>) => void;
+  updateDeal: (dealId: string, patch: Partial<Pick<Deal, "title" | "amount" | "currency" | "probability" | "expectedCloseAt" | "owner" | "tags" | "linkedInventory" | "linkedServices">>) => void;
   addDealAttachment: (dealId: string, attachment: Omit<Attachment, "id" | "createdAt">) => void;
   removeDealAttachment: (dealId: string, attachmentId: string) => void;
   addDealComment: (dealId: string, text: string, author?: string) => void;
